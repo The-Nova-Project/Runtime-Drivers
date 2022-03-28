@@ -29,7 +29,7 @@
 #include <utils/sh_dpi_tasks.h>
 
 
-#define BRAM_STRT_ADDRESS UINT32_C(0x0)
+// #define BRAM_STRT_ADDRESS UINT32_C(0x0)
 #define TOCORE_ADDRESS UINT32_C(0x0000000080000120)
 
 const struct logger *logger = &logger_stdout;
@@ -57,6 +57,8 @@ uint32_t byte_swap(uint32_t value) {
 
 int main(int argc, char **argv)
 {
+
+    uint32_t BRAM_STRT_ADDRESS = 0x0;
 
     system("fpga-set-virtual-dip-switch -S 0 -D 1111111111111111");
     #ifdef SCOPE
@@ -179,6 +181,8 @@ int peek_poke_example(int total_values, uint32_t values [], int slot_id, int pf_
         rc = fpga_pci_poke(pci_bar_handle, BRAM_STRT_ADDRESS, value);
 
         fail_on(rc, out, "Unable to write to the fpga !");
+
+        BRAM_STRT_ADDRESS = BRAM_STRT_ADDRESS+4;
     }
     
 
