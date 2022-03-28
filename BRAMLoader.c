@@ -78,7 +78,6 @@ int main(int argc, char **argv)
 };
     int slot_id = 0;
     int rc;
-    
 
     /* initialize the fpga_mgmt library */
     rc = fpga_mgmt_init();
