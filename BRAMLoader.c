@@ -30,7 +30,7 @@
 
 
 // #define BRAM_STRT_ADDRESS UINT32_C(0x0)
-#define TOCORE_ADDRESS UINT32_C(0x0000000080000120)
+#define TOCORE_ADDRESS UINT32_C(0x120)
 
 const struct logger *logger = &logger_stdout;
 static uint16_t pci_vendor_id = 0x1D0F; /* Amazon PCI Vendor ID */
@@ -61,7 +61,9 @@ int main(int argc, char **argv)
 
     uint32_t BRAM_STRT_ADDRESS = 0x0;
 
-    // system("fpga-set-virtual-dip-switch -S 0 -D 1111111111111111");
+    printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET ON  ---- --- -- -- - -- - - - --- - \n");
+
+    system("fpga-set-virtual-dip-switch -S 0 -D 1111111111111111");
     #ifdef SCOPE
       svScope scope;
       scope = svGetScopeFromName("tb");
@@ -174,7 +176,7 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
    
     /* write a value into the mapped address space */
     // uint32_t expected = value;
-    printf("WRITING INRO BRAM BEGINSSSS !!!!");
+    printf("WRITING INRO BRAM BEGINSSSS !!!!\n");
     int i=0;
     for(i=0; i<total_values;i++){
         uint32_t value = values[i];
@@ -187,32 +189,39 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
     }
    
 
+   printf("\n ------ WRITING DEADBEEF TO TO-HOST -------- /n");
+   rc = fpga_pci_poke(pci_bar_handle, TOCORE_ADDRESS, 0xdeadbeef);
+    fail_on(rc, out, "Unable to write to the fpga !");
+
 
     /* ------------------------------------------------- WRITE DONE ---------------------------------------------------------- */
 
+    printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
     system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
 
     uint32_t pass_val = 0;
     uint32_t fail_val = 1;
     uint32_t theValue;
 
+
+printf("\n ------------------- PEEKING THRU TO-CORE ------------------\n");
     do {
         sleep(3);
 
         rc = fpga_pci_peek(pci_bar_handle, TOCORE_ADDRESS, &theValue);
         fail_on(rc, out, "Unable to read read from the fpga !");
         printf("=====  Entering peek_poke_example =====\n");
-        printf("register: 0x%x\n", theValue);
+        printf("peeked value: 0x%x\n", theValue);
         if(theValue == pass_val) {
             printf("TEST PASSED");
             printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
         }
         if(theValue == fail_val) {
-            printf("TEST PASSED");
+            printf("TEST FAILED");
             printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
         }
     }
-    while (theValue == pass_val || theValue == fail_val);
+    while (theValue != pass_val && theValue != fail_val);
 
 out:
     /* clean up */
