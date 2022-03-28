@@ -63,7 +63,7 @@ int main(int argc, char **argv)
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET ON  ---- --- -- -- - -- - - - --- - \n");
 
-    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
+    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000011");
     #ifdef SCOPE
       svScope scope;
       scope = svGetScopeFromName("tb");
@@ -291,7 +291,7 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
     /* ------------------------------------------------- WRITE DONE ---------------------------------------------------------- */
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
-    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000011");
+    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
 
     uint32_t pass_val = 0;
     uint32_t fail_val = 1;
