@@ -30,7 +30,7 @@
 
 
 // #define BRAM_STRT_ADDRESS UINT32_C(0x0)
-#define TOCORE_ADDRESS UINT32_C(0x120)
+#define TOCORE_ADDRESS UINT32_C(0x00000120)
 
 const struct logger *logger = &logger_stdout;
 static uint16_t pci_vendor_id = 0x1D0F; /* Amazon PCI Vendor ID */
@@ -63,22 +63,91 @@ int main(int argc, char **argv)
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET ON  ---- --- -- -- - -- - - - --- - \n");
 
-    system("fpga-set-virtual-dip-switch -S 0 -D 1111111111111111");
+    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
     #ifdef SCOPE
       svScope scope;
       scope = svGetScopeFromName("tb");
       svSetScope(scope);
     #endif
 
-    int total_instructions = 6;
-    uint32_t final_hex[6]= {
+    int total_instructions = 75;
+    uint32_t final_hex[75]= {
 
-0x400027B7,
-0x00078793,
-0x00A00413,
-0x01900493,
-0x0087A423,
-0x0097A223,
+0x0500006f,
+0x340c1073,
+0x00000c17,
+0x108c0c13,
+0x019c3023,
+0x02000c37,
+0x000c3023,
+0x34202cf3,
+0x00000c17,
+0x0e8c0c13,
+0x019c3023,
+0x00000c17,
+0x0ecc0c13,
+0x00100c93,
+0x019c3023,
+0x00000c17,
+0x0d4c0c13,
+0x000c3c83,
+0x34002c73,
+0x30200073,
+0x00100093,
+0x00200113,
+0x00300193,
+0xf14028f3,
+0x09101c63,
+0xfff6e837,
+0x5d58081b,
+0x00c81813,
+0xc3b80813,
+0x00d81813,
+0x54380813,
+0x00c81813,
+0x21080813,
+0x34081073,
+0x340028f3,
+0x07181663,
+0x00000817,
+0xf7480813,
+0x30581073,
+0x30447073,
+0x30047073,
+0x00000a17,
+0x074a0a13,
+0x000a3023,
+0x02000a37,
+0x00100a93,
+0x015a3023,
+0x30446073,
+0x30046073,
+0x00000a17,
+0x054a0a13,
+0x000a3a83,
+0xfe0a8ee3,
+0x00000a17,
+0x034a0a13,
+0x000a3a83,
+0x00100b13,
+0x03fb1b13,
+0x003b0b13,
+0x015b1663,
+0x00000f93,
+0x0080006f,
+0x00100f93,
+0x00000c17,
+0x024c0c13,
+0x01fc2023,
+0x00000000,
+0x00000000,
+0x00000000,
+0x00000000,
+0x00000000,
+0x00000000,
+0x00000000,
+0x00000000,
+0x00000000
 
 };
     int slot_id = 0;
@@ -180,12 +249,37 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
     int i=0;
     for(i=0; i<total_values;i++){
         uint32_t value = values[i];
-        printf("Writing 0x%08x to BRAM\n", value);
+        printf("Writing 0x%08x to BRAM", value);
+        printf("ON ADDRESS 0x%08x", BRAM_STRT_ADDRESS);
         rc = fpga_pci_poke(pci_bar_handle, BRAM_STRT_ADDRESS, value);
+        printf("\n");
 
         fail_on(rc, out, "Unable to write to the fpga !");
 
         BRAM_STRT_ADDRESS = BRAM_STRT_ADDRESS+4;
+    }
+
+
+    uint32_t BRAM_STRT_ADDRESS_r = 0x0;
+    int ii=0;
+    for(ii=0; ii<total_values;ii++){
+        uint32_t expectedValue = values[ii];
+        uint32_t value;
+        rc = fpga_pci_peek(pci_bar_handle, BRAM_STRT_ADDRESS_r, &value);
+
+        printf("READING FROM 0x%08x ", BRAM_STRT_ADDRESS_r);
+        printf("VALUE 0x%08x ------", expectedValue);
+        if(expectedValue == value){
+            printf("PASSSED  - 0x%08x", value);
+        } else {
+            printf("FAILED  - 0x%08x", value);
+        }
+        printf("\n");
+        
+
+        fail_on(rc, out, "Unable to write to the fpga !");
+
+        BRAM_STRT_ADDRESS_r = BRAM_STRT_ADDRESS_r+4;
     }
    
 
@@ -197,7 +291,7 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
     /* ------------------------------------------------- WRITE DONE ---------------------------------------------------------- */
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
-    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
+    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000011");
 
     uint32_t pass_val = 0;
     uint32_t fail_val = 1;
@@ -205,7 +299,8 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
 
 
 printf("\n ------------------- PEEKING THRU TO-CORE ------------------\n");
-    do {
+int cccc = 0;
+    for(cccc=0;cccc<20;cccc++){
         sleep(3);
 
         rc = fpga_pci_peek(pci_bar_handle, TOCORE_ADDRESS, &theValue);
@@ -215,13 +310,14 @@ printf("\n ------------------- PEEKING THRU TO-CORE ------------------\n");
         if(theValue == pass_val) {
             printf("TEST PASSED");
             printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
+            break;
         }
         if(theValue == fail_val) {
             printf("TEST FAILED");
             printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
         }
     }
-    while (theValue != pass_val && theValue != fail_val);
+    // while (theValue != pass_val && theValue != fail_val);
 
 out:
     /* clean up */
