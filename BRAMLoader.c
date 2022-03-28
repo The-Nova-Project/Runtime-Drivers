@@ -44,7 +44,6 @@ void usage(char* program_name) {
 
 uint32_t byte_swap(uint32_t value);
 
-int peek_poke_example(uint32_t value, int slot_id, int pf_id, int bar_id);
 
 uint32_t byte_swap(uint32_t value) {
     uint32_t swapped_value = 0;
@@ -54,13 +53,15 @@ uint32_t byte_swap(uint32_t value) {
     }
     return swapped_value;
 }
+int peek_poke_example(int total_values, uint32_t values [], int slot_id, int pf_id, int bar_id);
+
 
 int main(int argc, char **argv)
 {
 
     uint32_t BRAM_STRT_ADDRESS = 0x0;
 
-    system("fpga-set-virtual-dip-switch -S 0 -D 1111111111111111");
+    // system("fpga-set-virtual-dip-switch -S 0 -D 1111111111111111");
     #ifdef SCOPE
       svScope scope;
       scope = svGetScopeFromName("tb");
@@ -68,7 +69,7 @@ int main(int argc, char **argv)
     #endif
 
     int total_instructions = 6;
-    uint32_t final_hex[total_instructions]= {
+    uint32_t final_hex[6]= {
 
 0x400027B7,
 0x00078793,
@@ -90,7 +91,7 @@ int main(int argc, char **argv)
     fail_on(rc, out, "AFI not ready");
 #endif
 
-    
+   
     /* Accessing the CL registers via AppPF BAR0, which maps to sh_cl_ocl_ AXI-Lite bus between AWS FPGA Shell and the CL*/
 
     printf("===== Starting with writing in BAR 01 =====\n");
@@ -98,11 +99,11 @@ int main(int argc, char **argv)
 
     rc = peek_poke_example( total_instructions, final_hex, slot_id, FPGA_APP_PF, APP_PF_BAR1);
     fail_on(rc, out, "peek-poke example failed");
-    
+   
 
 
     return rc;
-    
+   
 out:
     return 1;
 
@@ -110,7 +111,7 @@ out:
 
 
 int check_afi_ready(int slot_id) {
-   struct fpga_mgmt_image_info info = {0}; 
+   struct fpga_mgmt_image_info info = {0};
    int rc;
 
    /* get local image description, contains status, vendor id, and device id. */
@@ -151,7 +152,7 @@ int check_afi_ready(int slot_id) {
                "the expected values.");
      }
    }
-    
+   
    return rc;
  out:
    return 1;
@@ -165,17 +166,17 @@ int check_afi_ready(int slot_id) {
 int peek_poke_example(int total_values, uint32_t values [], int slot_id, int pf_id, int bar_id) {
     int rc;
     /* pci_bar_handle_t is a handler for an address space exposed by one PCI BAR on one of the PCI PFs of the FPGA */
-
+uint32_t BRAM_STRT_ADDRESS = 0X0;
     pci_bar_handle_t pci_bar_handle = PCI_BAR_HANDLE_INIT;
 
     rc = fpga_pci_attach(slot_id, pf_id, bar_id, 0, &pci_bar_handle);
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
-    
+   
     /* write a value into the mapped address space */
-    uint32_t expected = value;
+    // uint32_t expected = value;
     printf("WRITING INRO BRAM BEGINSSSS !!!!");
-
-    for(int i=0; i<total_values;i++){
+    int i=0;
+    for(i=0; i<total_values;i++){
         uint32_t value = values[i];
         printf("Writing 0x%08x to BRAM\n", value);
         rc = fpga_pci_poke(pci_bar_handle, BRAM_STRT_ADDRESS, value);
@@ -184,7 +185,7 @@ int peek_poke_example(int total_values, uint32_t values [], int slot_id, int pf_
 
         BRAM_STRT_ADDRESS = BRAM_STRT_ADDRESS+4;
     }
-    
+   
 
 
     /* ------------------------------------------------- WRITE DONE ---------------------------------------------------------- */
@@ -202,11 +203,11 @@ int peek_poke_example(int total_values, uint32_t values [], int slot_id, int pf_
         fail_on(rc, out, "Unable to read read from the fpga !");
         printf("=====  Entering peek_poke_example =====\n");
         printf("register: 0x%x\n", theValue);
-        if(value == pass_val) {
+        if(theValue == pass_val) {
             printf("TEST PASSED");
             printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
         }
-        if(value == fail_val) {
+        if(theValue == fail_val) {
             printf("TEST PASSED");
             printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
         }
@@ -225,13 +226,3 @@ out:
     /* if there is an error code, exit with status 1 */
     return (rc != 0 ? 1 : 0);
 }
-
-#ifdef SV_TEST
-/*This function is used transfer string buffer from SV to C.
-  This function currently returns 0 but can be used to update a buffer on the 'C' side.*/
-int send_rdbuf_to_c(char* rd_buf)
-{
-   return 0;
-}
-
-#endif
