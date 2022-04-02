@@ -44,6 +44,22 @@ void usage(char* program_name) {
 
 uint32_t byte_swap(uint32_t value);
 
+unsigned int instruction_collector(){
+    // Number of instruction lines are assigned
+    int inst_no = 3;
+    // Array for storing the instructions is initialized
+    unsigned int hex_arr[inst_no];
+    // Opening the file (with complete path)
+    FILE *fptr = fopen("hex.txt", "r");
+    // Assigning the instructions to array
+    for (int i = 0; i < inst_no; ++i)
+    {
+        fscanf(fptr, "%X", &hex_arr[i]);
+    }
+    // Closing the file
+    fclose(fptr);
+    return hex_arr;
+}
 
 uint32_t byte_swap(uint32_t value) {
     uint32_t swapped_value = 0;
@@ -71,85 +87,86 @@ int main(int argc, char **argv)
     #endif
 
     int total_instructions = 75;
-    uint32_t final_hex[75]= {
+    uint32_t final_hex[75]= instruction_collector();
+//      {
 
-0x0500006f,
-0x340c1073,
-0x00000c17,
-0x108c0c13,
-0x019c3023,
-0x02000c37,
-0x000c3023,
-0x34202cf3,
-0x00000c17,
-0x0e8c0c13,
-0x019c3023,
-0x00000c17,
-0x0ecc0c13,
-0x00100c93,
-0x019c3023,
-0x00000c17,
-0x0d4c0c13,
-0x000c3c83,
-0x34002c73,
-0x30200073,
-0x00100093,
-0x00200113,
-0x00300193,
-0xf14028f3,
-0x09101c63,
-0xfff6e837,
-0x5d58081b,
-0x00c81813,
-0xc3b80813,
-0x00d81813,
-0x54380813,
-0x00c81813,
-0x21080813,
-0x34081073,
-0x340028f3,
-0x07181663,
-0x00000817,
-0xf7480813,
-0x30581073,
-0x30447073,
-0x30047073,
-0x00000a17,
-0x074a0a13,
-0x000a3023,
-0x02000a37,
-0x00100a93,
-0x015a3023,
-0x30446073,
-0x30046073,
-0x00000a17,
-0x054a0a13,
-0x000a3a83,
-0xfe0a8ee3,
-0x00000a17,
-0x034a0a13,
-0x000a3a83,
-0x00100b13,
-0x03fb1b13,
-0x003b0b13,
-0x015b1663,
-0x00000f93,
-0x0080006f,
-0x00100f93,
-0x00000c17,
-0x024c0c13,
-0x01fc2023,
-0x00000000,
-0x00000000,
-0x00000000,
-0x00000000,
-0x00000000,
-0x00000000,
-0x00000000,
-0x00000000,
-0x00000000
+// 0x0500006f,
+// 0x340c1073,
+// 0x00000c17,
+// 0x108c0c13,
+// 0x019c3023,
+// 0x02000c37,
+// 0x000c3023,
+// 0x34202cf3,
+// 0x00000c17,
+// 0x0e8c0c13,
+// 0x019c3023,
+// 0x00000c17,
+// 0x0ecc0c13,
+// 0x00100c93,
+// 0x019c3023,
+// 0x00000c17,
+// 0x0d4c0c13,
+// 0x000c3c83,
+// 0x34002c73,
+// 0x30200073,
+// 0x00100093,
+// 0x00200113,
+// 0x00300193,
+// 0xf14028f3,
+// 0x09101c63,
+// 0xfff6e837,
+// 0x5d58081b,
+// 0x00c81813,
+// 0xc3b80813,
+// 0x00d81813,
+// 0x54380813,
+// 0x00c81813,
+// 0x21080813,
+// 0x34081073,
+// 0x340028f3,
+// 0x07181663,
+// 0x00000817,
+// 0xf7480813,
+// 0x30581073,
+// 0x30447073,
+// 0x30047073,
+// 0x00000a17,
+// 0x074a0a13,
+// 0x000a3023,
+// 0x02000a37,
+// 0x00100a93,
+// 0x015a3023,
+// 0x30446073,
+// 0x30046073,
+// 0x00000a17,
+// 0x054a0a13,
+// 0x000a3a83,
+// 0xfe0a8ee3,
+// 0x00000a17,
+// 0x034a0a13,
+// 0x000a3a83,
+// 0x00100b13,
+// 0x03fb1b13,
+// 0x003b0b13,
+// 0x015b1663,
+// 0x00000f93,
+// 0x0080006f,
+// 0x00100f93,
+// 0x00000c17,
+// 0x024c0c13,
+// 0x01fc2023,
+// 0x00000000,
+// 0x00000000,
+// 0x00000000,
+// 0x00000000,
+// 0x00000000,
+// 0x00000000,
+// 0x00000000,
+// 0x00000000,
+// 0x00000000
 
-};
+// };
     int slot_id = 0;
     int rc;
 
