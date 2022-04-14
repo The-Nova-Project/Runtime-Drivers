@@ -1,19 +1,3 @@
-// Amazon FPGA Hardware Development Kit
-//
-// Copyright 2016 Amazon.com, Inc. or its affiliates. All Rights Reserved.
-//
-// Licensed under the Amazon Software License (the "License"). You may not use
-// this file except in compliance with the License. A copy of the License is
-// located at
-//
-//    http://aws.amazon.com/asl/
-//
-// or in the "license" file accompanying this file. This file is distributed on
-// an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, express or
-// implied. See the License for the specific language governing permissions and
-// limitations under the License.
-
-
 #include <stdio.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -30,7 +14,7 @@
 
 
 // #define BRAM_STRT_ADDRESS UINT32_C(0x0)
-#define TOCORE_ADDRESS UINT32_C(0x00000120)
+#define TOCORE_ADDRESS UINT32_C(0x00000008)
 
 const struct logger *logger = &logger_stdout;
 static uint16_t pci_vendor_id = 0x1D0F; /* Amazon PCI Vendor ID */
@@ -42,14 +26,7 @@ void usage(char* program_name) {
     printf("usage: %s [--slot <slot-id>][<poke-value>]\n", program_name);
 }
 
-uint32_t byte_swap(uint32_t value);
-
-unsigned int instruction_collector(){
-    // Number of instruction lines are assigned
-    int inst_no = 3;
-    // Array for storing the instructions is initialized
-    unsigned int hex_arr[inst_no];
-    // Opening the file (with complete path)
+void instrLoader(uint32_t hex_arr [], int inst_no){
     FILE *fptr = fopen("hex.txt", "r");
     // Assigning the instructions to array
     for (int i = 0; i < inst_no; ++i)
@@ -58,8 +35,10 @@ unsigned int instruction_collector(){
     }
     // Closing the file
     fclose(fptr);
-    return hex_arr;
 }
+
+uint32_t byte_swap(uint32_t value);
+
 
 uint32_t byte_swap(uint32_t value) {
     uint32_t swapped_value = 0;
@@ -74,12 +53,22 @@ int peek_poke_example(int total_values, uint32_t values [], int slot_id, int pf_
 
 int main(int argc, char **argv)
 {
+    // int rc;
+        int rc;
+
 
     uint32_t BRAM_STRT_ADDRESS = 0x0;
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET ON  ---- --- -- -- - -- - - - --- - \n");
 
-    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000011");
+    // system("sudo fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
+    uint16_t frstStatus;
+    uint16_t dip_sw_value = 0x00;
+    rc = fpga_mgmt_set_vDIP(0, dip_sw_value);
+    fail_on(rc, out, "FAIL TO WRITE VDIP1");
+    rc = fpga_mgmt_get_vDIP_status(0, &frstStatus);
+    fail_on(rc, out, "FAIL TO READ VDIP1");
+    printf("VDIP VALUE: 0x%016x \n", frstStatus);
     #ifdef SCOPE
       svScope scope;
       scope = svGetScopeFromName("tb");
@@ -87,88 +76,20 @@ int main(int argc, char **argv)
     #endif
 
     int total_instructions = 75;
-    uint32_t final_hex[75]= instruction_collector();
-//      {
 
-// 0x0500006f,
-// 0x340c1073,
-// 0x00000c17,
-// 0x108c0c13,
-// 0x019c3023,
-// 0x02000c37,
-// 0x000c3023,
-// 0x34202cf3,
-// 0x00000c17,
-// 0x0e8c0c13,
-// 0x019c3023,
-// 0x00000c17,
-// 0x0ecc0c13,
-// 0x00100c93,
-// 0x019c3023,
-// 0x00000c17,
-// 0x0d4c0c13,
-// 0x000c3c83,
-// 0x34002c73,
-// 0x30200073,
-// 0x00100093,
-// 0x00200113,
-// 0x00300193,
-// 0xf14028f3,
-// 0x09101c63,
-// 0xfff6e837,
-// 0x5d58081b,
-// 0x00c81813,
-// 0xc3b80813,
-// 0x00d81813,
-// 0x54380813,
-// 0x00c81813,
-// 0x21080813,
-// 0x34081073,
-// 0x340028f3,
-// 0x07181663,
-// 0x00000817,
-// 0xf7480813,
-// 0x30581073,
-// 0x30447073,
-// 0x30047073,
-// 0x00000a17,
-// 0x074a0a13,
-// 0x000a3023,
-// 0x02000a37,
-// 0x00100a93,
-// 0x015a3023,
-// 0x30446073,
-// 0x30046073,
-// 0x00000a17,
-// 0x054a0a13,
-// 0x000a3a83,
-// 0xfe0a8ee3,
-// 0x00000a17,
-// 0x034a0a13,
-// 0x000a3a83,
-// 0x00100b13,
-// 0x03fb1b13,
-// 0x003b0b13,
-// 0x015b1663,
-// 0x00000f93,
-// 0x0080006f,
-// 0x00100f93,
-// 0x00000c17,
-// 0x024c0c13,
-// 0x01fc2023,
-// 0x00000000,
-// 0x00000000,
-// 0x00000000,
-// 0x00000000,
-// 0x00000000,
-// 0x00000000,
-// 0x00000000,
-// 0x00000000,
-// 0x00000000
+    
+    uint32_t final_hex[75];
 
-// };
+    instrLoader(&final_hex, total_instructions);
+
+    printf("Verifying the instruction loader \n");
+    // Verifying the instructions
+    for (int j = 0; j < total_instructions; ++j)
+    {
+        printf("%X\n", final_hex[j]);
+    }
+
     int slot_id = 0;
-    int rc;
 
     /* initialize the fpga_mgmt library */
     rc = fpga_mgmt_init();
@@ -300,15 +221,29 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
     }
    
 
-   printf("\n ------ WRITING DEADBEEF TO TO-HOST -------- /n");
-   rc = fpga_pci_poke(pci_bar_handle, TOCORE_ADDRESS, 0xdeadbeef);
-    fail_on(rc, out, "Unable to write to the fpga !");
+//    printf("\n ------ WRITING DEADBEEF TO TO-HOST -------- /n");
+//    rc = fpga_pci_poke(pci_bar_handle, TOCORE_ADDRESS, 0xdeadbeef);
+//     fail_on(rc, out, "Unable to write to the fpga !");
 
 
     /* ------------------------------------------------- WRITE DONE ---------------------------------------------------------- */
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
-    system("fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
+    // system("sudo fpga-set-virtual-dip-switch -S 0 -D 0000000000000011");
+    uint16_t finalStaus, ledStatus;
+    uint16_t di_sw_value2 = 0x03;
+    sleep(5);
+    // int rc;
+    rc = fpga_mgmt_set_vDIP(0,di_sw_value2);
+    fail_on(rc, out, "FAILED TO WRITE VDIP 2");
+    rc = fpga_mgmt_get_vDIP_status(0, &finalStaus);
+    fail_on(rc, out, "FAIL TO GET LEDs");
+    printf("VDIP VALUE: 0x%016x \n", finalStaus);
+
+sleep(5);
+    fpga_mgmt_get_vLED_status(0, &ledStatus);
+
+    printf("VLED VALUE: 0x%016x \n", ledStatus);
 
     uint32_t pass_val = 0;
     uint32_t fail_val = 1;
@@ -325,13 +260,13 @@ int cccc = 0;
         printf("=====  Entering peek_poke_example =====\n");
         printf("peeked value: 0x%x\n", theValue);
         if(theValue == pass_val) {
-            printf("TEST PASSED");
-            printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
+            printf("TEST PASSED\n");
+            printf("Resulting value matched expected value 0x%x.\n It worked!\n", theValue);
             break;
         }
         if(theValue == fail_val) {
-            printf("TEST FAILED");
-            printf("Resulting value matched expected value 0x%x. It worked!\n", theValue);
+            printf("TEST FAILED\n");
+            printf("Resulting value matched expected value 0x%x.\n It worked!\n", theValue);
         }
     }
     // while (theValue != pass_val && theValue != fail_val);
@@ -344,6 +279,8 @@ out:
             printf("Failure while detaching from the fpga.\n");
         }
     }
+
+    fpga_mgmt_close();
 
     /* if there is an error code, exit with status 1 */
     return (rc != 0 ? 1 : 0);
