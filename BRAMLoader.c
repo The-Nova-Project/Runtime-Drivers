@@ -14,10 +14,13 @@
 
 #define hydra_reset_off          0x02
 #define hydra_reset_on           0x03
+#define deadbeefValue           UINT64_C(0xdeadbeef)
+#define delayy                   5000;
+#define dip_sw_zero              0x00
 
-
+long delayVal = delayy;
 // #define BRAM_STRT_ADDRESS UINT32_C(0x0)
-#define TOCORE_ADDRESS UINT32_C(0x00000008)
+#define TOCORE_ADDRESS UINT32_C(0x120)
 
 const struct logger *logger = &logger_stdout;
 static uint16_t pci_vendor_id = 0x1D0F; /* Amazon PCI Vendor ID */
@@ -32,7 +35,8 @@ void usage(char* program_name) {
 void instrLoader(uint32_t hex_arr [], int inst_no){
     FILE *fptr = fopen("hex.txt", "r");
     // Assigning the instructions to array
-    for (int i = 0; i < inst_no; ++i)
+    int i;
+    for (i = 0; i < inst_no; ++i)
     {
         fscanf(fptr, "%X", &hex_arr[i]);
     }
@@ -53,13 +57,13 @@ uint32_t byte_swap(uint32_t value) {
 }
 int peek_poke_example(int total_values, uint32_t values [], int slot_id, int pf_id, int bar_id);
 
+uint16_t dip_sw_val = 0U;
 
 int main(int argc, char **argv)
 {
     // int rc;
         int rc;
-    uint16_t dip_sw_val = 0U;
-
+    
     uint32_t BRAM_STRT_ADDRESS = 0x0;
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET ON  ---- --- -- -- - -- - - - --- - \n");
@@ -71,13 +75,29 @@ int main(int argc, char **argv)
     
     rc = fpga_mgmt_get_vDIP_status(0, &dip_sw_val);
     fail_on(rc, out, "FAIL TO READ VDIP1");
-    printf("CURRENT VAL: 0x%016x \n", dip_sw_val);
-
+    printf("CURRENT VAL: 0x%02x \n", dip_sw_val);
+nanosleep(&delayVal, &delayVal);
     dip_sw_val = hydra_reset_off;
     rc = fpga_mgmt_set_vDIP(0, dip_sw_val);
     fail_on(rc, out, "FAIL TO WRITE VDIP1");
+
+        printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
+
+
+    nanosleep(&delayVal, &delayVal);
+    dip_sw_val = dip_sw_zero;
+    rc = fpga_mgmt_set_vDIP(0, dip_sw_val);
+    fail_on(rc, out, "FAIL TO WRITE VDIP1"); 
+
+        printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
+ 
+
+    nanosleep(&delayVal, &delayVal);
+    dip_sw_val = hydra_reset_off;
+    rc = fpga_mgmt_set_vDIP(0, dip_sw_val);
+    fail_on(rc, out, "FAIL TO WRITE VDIP1");  
     
-    printf("NEW VDIP VALUE: 0x%016x \n", dip_sw_val);
+    printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
     #ifdef SCOPE
       svScope scope;
       scope = svGetScopeFromName("tb");
@@ -91,12 +111,13 @@ int main(int argc, char **argv)
 
     instrLoader(&final_hex, total_instructions);
 
-    printf("Verifying the instruction loader \n");
-    // Verifying the instructions
-    for (int j = 0; j < total_instructions; ++j)
-    {
-        printf("%X\n", final_hex[j]);
-    }
+    // printf("Verifying the instruction loader \n");
+    // // Verifying the instructions
+    // int j;
+    // for (j = 0; j < total_instructions; ++j)
+    // {
+    //     printf("%X\n", final_hex[j]);
+    // }
 
     int slot_id = 0;
 
@@ -230,40 +251,48 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
     }
    
 
-//    printf("\n ------ WRITING DEADBEEF TO TO-HOST -------- /n");
-//    rc = fpga_pci_poke(pci_bar_handle, TOCORE_ADDRESS, 0xdeadbeef);
-//     fail_on(rc, out, "Unable to write to the fpga !");
+   printf("\n ------ WRITING DEADBEEF TO TO-HOST -------- /n");
+   uint64_t deadVal;
+   deadVal = deadbeefValue;
+   printf("------------- deadbeef val 0x%08x", deadVal);
+   rc = fpga_pci_poke(pci_bar_handle, TOCORE_ADDRESS, deadVal);
+    fail_on(rc, out, "Unable to write to the fpga !");
 
+
+   
 
     /* ------------------------------------------------- WRITE DONE ---------------------------------------------------------- */
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
     // system("sudo fpga-set-virtual-dip-switch -S 0 -D 0000000000000011");
     uint16_t finalStaus, ledStatus;
-    uint16_t di_sw_value2 = 0U;
-    sleep(5);
+    // uint16_t di_sw_value2 = 0U;
+    // sleep(5);
     // int rc;
-    di_sw_value2 = hydra_reset_on;
-    rc = fpga_mgmt_set_vDIP(0,di_sw_value2);
+    dip_sw_val |= hydra_reset_on;
+    rc = fpga_mgmt_set_vDIP(0,dip_sw_val);
     fail_on(rc, out, "FAILED TO WRITE VDIP 2");
-    rc = fpga_mgmt_get_vDIP_status(0, &di_sw_value2);
+    rc = fpga_mgmt_get_vDIP_status(0, &dip_sw_val);
     fail_on(rc, out, "FAIL TO GET LEDs");
-    printf("VDIP VALUE: 0x%016x \n", di_sw_value2);
+    printf("VDIP VALUE: 0x%02x \n", dip_sw_val);
 
-sleep(5);
+// sleep(5);
     fpga_mgmt_get_vLED_status(0, &ledStatus);
 
-    printf("VLED VALUE: 0x%016x \n", ledStatus);
+    printf("VLED VALUE: 0x%02x \n", ledStatus);
 
     uint32_t pass_val = 0;
     uint32_t fail_val = 1;
     uint32_t theValue;
 
+ 
 
 printf("\n ------------------- PEEKING THRU TO-CORE ------------------\n");
 int cccc = 0;
     for(cccc=0;cccc<20;cccc++){
-        sleep(3);
+        // sleep(3);
+        
+        nanosleep(&delayVal, &delayVal);
 
         rc = fpga_pci_peek(pci_bar_handle, TOCORE_ADDRESS, &theValue);
         fail_on(rc, out, "Unable to read read from the fpga !");
