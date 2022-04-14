@@ -12,6 +12,9 @@
 
 #include <utils/sh_dpi_tasks.h>
 
+#define hydra_reset_off          0x02
+#define hydra_reset_on           0x03
+
 
 // #define BRAM_STRT_ADDRESS UINT32_C(0x0)
 #define TOCORE_ADDRESS UINT32_C(0x00000008)
@@ -55,7 +58,7 @@ int main(int argc, char **argv)
 {
     // int rc;
         int rc;
-
+    uint16_t dip_sw_val = 0U;
 
     uint32_t BRAM_STRT_ADDRESS = 0x0;
 
@@ -63,12 +66,18 @@ int main(int argc, char **argv)
 
     // system("sudo fpga-set-virtual-dip-switch -S 0 -D 0000000000000000");
     uint16_t frstStatus;
-    uint16_t dip_sw_value = 0x00;
-    rc = fpga_mgmt_set_vDIP(0, dip_sw_value);
-    fail_on(rc, out, "FAIL TO WRITE VDIP1");
-    rc = fpga_mgmt_get_vDIP_status(0, &frstStatus);
+    // uint16_t dip_sw_value = 0x00;
+    printf("----------- CURRENT VDIP COND --------\n");
+    
+    rc = fpga_mgmt_get_vDIP_status(0, &dip_sw_val);
     fail_on(rc, out, "FAIL TO READ VDIP1");
-    printf("VDIP VALUE: 0x%016x \n", frstStatus);
+    printf("CURRENT VAL: 0x%016x \n", dip_sw_val);
+
+    dip_sw_val = hydra_reset_off;
+    rc = fpga_mgmt_set_vDIP(0, dip_sw_val);
+    fail_on(rc, out, "FAIL TO WRITE VDIP1");
+    
+    printf("NEW VDIP VALUE: 0x%016x \n", dip_sw_val);
     #ifdef SCOPE
       svScope scope;
       scope = svGetScopeFromName("tb");
@@ -231,14 +240,15 @@ uint32_t BRAM_STRT_ADDRESS = 0X0;
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
     // system("sudo fpga-set-virtual-dip-switch -S 0 -D 0000000000000011");
     uint16_t finalStaus, ledStatus;
-    uint16_t di_sw_value2 = 0x03;
+    uint16_t di_sw_value2 = 0U;
     sleep(5);
     // int rc;
+    di_sw_value2 = hydra_reset_on;
     rc = fpga_mgmt_set_vDIP(0,di_sw_value2);
     fail_on(rc, out, "FAILED TO WRITE VDIP 2");
-    rc = fpga_mgmt_get_vDIP_status(0, &finalStaus);
+    rc = fpga_mgmt_get_vDIP_status(0, &di_sw_value2);
     fail_on(rc, out, "FAIL TO GET LEDs");
-    printf("VDIP VALUE: 0x%016x \n", finalStaus);
+    printf("VDIP VALUE: 0x%016x \n", di_sw_value2);
 
 sleep(5);
     fpga_mgmt_get_vLED_status(0, &ledStatus);
