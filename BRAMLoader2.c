@@ -22,10 +22,11 @@
 #define PASSED_VAL              0
 #define FAILED_VAL              1
 
-const struct logger *logger = &logger_stdout;
-static uint16_t pci_vendor_id = 0x1D0F; /* Amazon PCI Vendor ID */
-static uint16_t pci_device_id = 0xF000; /* PCI Device ID preassigned by Amazon for F1 applications */
-static pci_bar_handle_t pci_bar_handle = PCI_BAR_HANDLE_INIT;
+const struct logger *logger             = &logger_stdout;
+static uint16_t pci_vendor_id           = 0x1D0F; /* Amazon PCI Vendor ID */
+static uint16_t pci_device_id           = 0xF000; /* PCI Device ID preassigned by Amazon for F1 applications */
+static pci_bar_handle_t pci_bar_handle  = PCI_BAR_HANDLE_INIT;
+static int pf_id                        = FPGA_APP_PF;
 
 int check_afi_ready(int slot_id) {
    struct fpga_mgmt_image_info info = {0};
@@ -132,12 +133,16 @@ int main(int argc, char **argv){
     instrLoader(&instructions_arr, TOTAL_INSTR);
 
     printf("===== Starting with writing into BRAM via BAR 01 =====\n");
+    
     int i = 0;
     for(i=0; i<TOTAL_INSTR; i++){
+
         instruction = instructions_arr[i];
+
         printf("Writing 0x%08x to BRAM", instruction);
         printf("ON ADDRESS 0x%08x", address);
         printf("\n");
+
         rc = fpga_pci_poke(pci_bar_handle, address, instruction);
         fail_on(rc, out, "Unable to write to the fpga !");
 
@@ -146,13 +151,16 @@ int main(int argc, char **argv){
 
     uint32_t expectedInstruction = 0U;
     address = BRAM_START_ADDR;
-    for j = 0;
+    int j = 0;
     for (j=0; j < TOTAL_INSTR; j++){
+
         expectedInstruction = instructions_arr[i];
         rc = fpga_pci_peek(pci_bar_handle, address, &instruction);
+
         fail_on(rc, out, "Unable to read from the fpga !");
         printf("READING FROM 0x%08x ", address);
         printf("VALUE 0x%08x ------", expectedInstruction);
+        
         if(expectedInstruction == instruction){
             printf("PASSSED  - 0x%08x", instruction);
         } else {
@@ -164,16 +172,21 @@ int main(int argc, char **argv){
     }
 
     printf("\n ------ ---- --- --- -- - -- WRITING DEADBEEF TO TO-HOST  ---- --- -- -- - -- - - - --- - \n");
+    
     instruction = DEADBEEF;
     address = TO_HOST;
+
     printf("------------- deadbeef val 0x%08x", instruction);
+
     rc = fpga_pci_poke(pci_bar_handle, address, instruction);
     fail_on(rc, out, "Unable to write to the fpga !");
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
+    
     dip_sw_val |= SU_RESET_ON;
     rc = fpga_mgmt_set_vDIP(0,dip_sw_val);
     fail_on(rc, out, "FAILED TO WRITE VDIP 2");
+
     rc = fpga_mgmt_get_vDIP_status(0, &dip_sw_val);
     fail_on(rc, out, "FAIL TO GET VDIP SWITCH VAL");
     printf("VDIP VALUE: 0x%02x \n", dip_sw_val);
@@ -186,12 +199,14 @@ int main(int argc, char **argv){
     uint32_t fail_val = FAILED_VAL;
 
     printf("\n ------ ---- --- --- -- - -- PEEKING THRU TO-HOST  ---- --- -- -- - -- - - - --- - \n");
+    
     int k =0;
+    address = TO_HOST;
     for(k=0;k<20;k++){
 
         nanosleep(&delayValue, &delayValue);
 
-        rc = fpga_pci_peek(pci_bar_handle, TOCORE_ADDRESS, &instruction);
+        rc = fpga_pci_peek(pci_bar_handle, address, &instruction);
         fail_on(rc, out, "Unable to read read from the fpga !");
         printf("peeked value: 0x%x\n", instruction);
 
