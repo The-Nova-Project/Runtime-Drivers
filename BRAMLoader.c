@@ -117,7 +117,7 @@ int main(int argc, char **argv){
     fail_on(rc, out, "FAIL TO READ VDIP1");
     printf("CURRENT VDIP VALUE : 0x%02x \n", dip_sw_val);
 
-    printf("SLEEP FOR %4d nanoseconds \n");
+    printf("SLEEP FOR %4ld nanoseconds \n", delayValue);
     nanosleep(&delayValue, &delayValue);
 
     dip_sw_val             = SU_RESET_OFF;
