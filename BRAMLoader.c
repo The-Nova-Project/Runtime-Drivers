@@ -14,7 +14,7 @@
 #define SU_RESET_OFF            0x02
 #define SU_RESET_ON             0x03
 #define DEADBEEF                0xdeadbeef
-#define WAIT_DELAY              5000
+#define WAIT_DELAY              5002
 #define ZERO_VAL                0x00
 #define TO_HOST                 0x120
 #define BRAM_START_ADDR         0x0
@@ -93,8 +93,9 @@ void instrLoader(uint32_t hex_arr [], int inst_no){
 int main(int argc, char **argv){
     uint8_t   reset_su     = 0U;
     uint16_t  dip_sw_val   = 0U;
+    uint16_t  led_val      = 0U;
     uint16_t  tohost_val   = TO_HOST;
-    int       slot_id      = 1, 
+    int       slot_id      = 0, 
               bar_id       = APP_PF_BAR1,
               rc,
               opt;
@@ -118,7 +119,7 @@ int main(int argc, char **argv){
     printf("CURRENT VDIP VALUE : 0x%02x \n", dip_sw_val);
 
     printf("SLEEP FOR %4ld nanoseconds \n", delayValue);
-    nanosleep(&delayValue, &delayValue);
+    // nanosleep(&delayValue, &delayValue);
 
     dip_sw_val             = SU_RESET_OFF;
 
@@ -154,7 +155,7 @@ int main(int argc, char **argv){
     int j = 0;
     for (j=0; j < TOTAL_INSTR; j++){
 
-        expectedInstruction = instructions_arr[i];
+        expectedInstruction = instructions_arr[j];
         rc = fpga_pci_peek(pci_bar_handle, address, &instruction);
 
         fail_on(rc, out, "Unable to read from the fpga !");
@@ -191,9 +192,9 @@ int main(int argc, char **argv){
     fail_on(rc, out, "FAIL TO GET VDIP SWITCH VAL");
     printf("VDIP VALUE: 0x%02x \n", dip_sw_val);
     
-    rc = fpga_mgmt_get_vLED_status(0, &dip_sw_val);
+    rc = fpga_mgmt_get_vLED_status(0, &led_val);
     fail_on(rc, out, "FAIL TO GET LEDs");
-    printf("VLED VALUE: 0x%02x \n", dip_sw_val);
+    printf("VLED VALUE: 0x%02x \n", led_val);
 
     uint32_t pass_val = PASSED_VAL;
     uint32_t fail_val = FAILED_VAL;
@@ -223,6 +224,10 @@ int main(int argc, char **argv){
             printf("Resulting value matched expected value 0x%x.\n It worked!\n", instruction);
         
         }
+
+        rc = fpga_mgmt_get_vLED_status(0, &led_val);
+        fail_on(rc, out, "FAIL TO GET LEDs");
+        printf("VLED VALUE: 0x%02x \n", led_val);
     }
 
 out:
