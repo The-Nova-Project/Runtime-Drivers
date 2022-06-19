@@ -17,4 +17,4 @@ This repo contains the following drivers
 | Driver | Format | Purpose |
 | ------------- | ------------- | ------------- |
 | Loader | ./loader &lt;hex-file&gt;/&lt;elf-file&gt; dma/bram | Reads a hex/elf file and stores the data into BRAM/DMA (WORD aligned) |
-| UART   | ..... | ..... |
+| UART   | ./uart_runtime | Transmit and receive data |
