@@ -8,17 +8,17 @@
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
 #include <utils/lcd.h>
+#include "fpga_dma.h"
 #include <utils/sh_dpi_tasks.h>
 
 // VDip Switches for Hydra SU Reset
-#define SU_RESET_OFF            0x02
-#define SU_RESET_ON             0x03
+#define SU_RESET_OFF            0x00
+#define SU_RESET_ON             0x01
 #define DEADBEEF                0xdeadbeef
 #define WAIT_DELAY              5002
 #define ZERO_VAL                0x00
 #define TO_HOST                 0x120
 #define BRAM_START_ADDR         0x0
-#define TOTAL_INSTR             75
 #define PASSED_VAL              0
 #define FAILED_VAL              1
 
@@ -96,7 +96,7 @@ int main(int argc, char **argv){
     uint16_t  led_val      = 0U;
     uint16_t  tohost_val   = TO_HOST;
     int       slot_id      = 0, 
-              bar_id       = APP_PF_BAR1,
+              bar_id       = FPGA_DMA_XDMA,
               rc,
               opt;
     uint32_t address       = BRAM_START_ADDR;
@@ -119,7 +119,7 @@ int main(int argc, char **argv){
     printf("CURRENT VDIP VALUE : 0x%02x \n", dip_sw_val);
 
     printf("SLEEP FOR %4ld nanoseconds \n", delayValue);
-    // nanosleep(&delayValue, &delayValue);
+    // msleep(1UL);
 
     dip_sw_val             = SU_RESET_OFF;
 
@@ -137,7 +137,7 @@ int main(int argc, char **argv){
     
     int i = 0;
     for(i=0; i<TOTAL_INSTR; i++){
-
+        msleep(1UL);
         instruction = instructions_arr[i];
 
         printf("Writing 0x%08x to BRAM", instruction);
@@ -182,6 +182,8 @@ int main(int argc, char **argv){
     rc = fpga_pci_poke(pci_bar_handle, address, instruction);
     fail_on(rc, out, "Unable to write to the fpga !");
 
+    
+
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
     
     dip_sw_val |= SU_RESET_ON;
@@ -205,7 +207,7 @@ int main(int argc, char **argv){
     address = TO_HOST;
     for(k=0;k<20;k++){
 
-        nanosleep(&delayValue, &delayValue);
+        msleep(1UL);
 
         rc = fpga_pci_peek(pci_bar_handle, address, &instruction);
         fail_on(rc, out, "Unable to read read from the fpga !");
