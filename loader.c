@@ -11,17 +11,18 @@
 #include "fpga_dma.h"
 #include <utils/sh_dpi_tasks.h>
 
-// VDip Switches for Hydra SU Reset
-#define SU_RESET_OFF            0x00
-#define SU_RESET_ON             0x01
-#define DEADBEEF                0xdeadbeef
-#define WAIT_DELAY              5002
-#define ZERO_VAL                0x00
-#define TO_HOST                 0x120
-#define BRAM_START_ADDR         0x0
-#define PASSED_VAL              0
-#define FAILED_VAL              1
+#define SU_RESET_OFF            0x00                // VDip Switches for Hydra SU Reset off
+#define SU_RESET_ON             0x01                // VDip Switches for Hydra SU Reset on
+#define DEADBEEF                0xdeadbeef          // DEADBEEF value
+#define WAIT_DELAY              5002                // Delay in ms
+#define ZERO_VAL                0x00                // Zero value
+#define TO_HOST                 0x120               // To Host address
+#define BRAM_START_ADDR         0x0                 // Start address of BRAM
+#define PASSED_VAL              0                   // Value for PASSED
+#define FAILED_VAL              1                   // Value for FAILED
 
+
+/*              AFI Specific Logic             */
 const struct logger *logger             = &logger_stdout;
 static uint16_t pci_vendor_id           = 0x1D0F; /* Amazon PCI Vendor ID */
 static uint16_t pci_device_id           = 0xF000; /* PCI Device ID preassigned by Amazon for F1 applications */
@@ -90,27 +91,31 @@ void instrLoader(uint32_t hex_arr [], int inst_no){
     fclose(fptr);
 }
 
-int main(int argc, char **argv){
-    uint8_t   reset_su     = 0U;
-    uint16_t  dip_sw_val   = 0U;
-    uint16_t  led_val      = 0U;
-    uint16_t  tohost_val   = TO_HOST;
-    int       slot_id      = 0, 
-              bar_id       = FPGA_DMA_XDMA,
-              rc,
-              opt;
-    uint32_t address       = BRAM_START_ADDR;
-    long     delayValue    = WAIT_DELAY;
-    uint32_t instruction   = 0U;
+int main(int argc, char* argv[]){
 
+    uint8_t   reset_su     = 0U;                    // Reset SU
+    uint16_t  dip_sw_val   = 0U,                    // DIP switch value
+              led_val      = 0U,                    // LED value
+              tohost_val   = TO_HOST;               // To Host value
+    int       slot_id      = 0,                     // Slot ID
+              bar_id       = FPGA_DMA_XDMA,         // Bar ID
+              rc,                                   // Return code
+              opt;                                  // Option
+    uint32_t address       = BRAM_START_ADDR,       // Address
+             instruction   = 0U;                    // Instruction
+    long     delayValue    = WAIT_DELAY;            // Delay value
+
+    // Initializing the array for instructions
     rc = fpga_mgmt_init();
     fail_on(rc, out, "Unable to initialize the fpga_mgmt library");
 
+    // Getting the slot ID
     rc = check_afi_ready(slot_id);
     fail_on(rc, out, "AFI not ready");
 
     rc = fpga_pci_attach(slot_id, pf_id, bar_id, 0, &pci_bar_handle);
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
+   
    
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET ON  ---- --- -- -- - -- - - - --- - \n");
 
@@ -119,7 +124,7 @@ int main(int argc, char **argv){
     printf("CURRENT VDIP VALUE : 0x%02x \n", dip_sw_val);
 
     printf("SLEEP FOR %4ld nanoseconds \n", delayValue);
-    // msleep(1UL);
+    msleep(1UL);
 
     dip_sw_val             = SU_RESET_OFF;
 
