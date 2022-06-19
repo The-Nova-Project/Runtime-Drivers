@@ -20,6 +20,7 @@
 #define BRAM_START_ADDR         0x0                 // Start address of BRAM
 #define PASSED_VAL              0                   // Value for PASSED
 #define FAILED_VAL              1                   // Value for FAILED
+#define HEX_FILE_PATH         "./elf.hex"           // Intermediate hex file
 
 
 /*              AFI Specific Logic             */
@@ -79,16 +80,60 @@ int check_afi_ready(int slot_id) {
 
 
 // utility func for loading instruction from hex file
-void instrLoader(uint32_t hex_arr [], int inst_no){
+void hexLoader(uint32_t hex_arr []){
     FILE *fptr = fopen("hex.txt", "r");
+    int inst_no = 0;
     // Assigning the instructions to array
-    int i;
-    for (i = 0; i < inst_no; ++i)
-    {
-        fscanf(fptr, "%X", &hex_arr[i]);
-    }
+    char c;
+    for (c = getc(fp); c != EOF; c = getc(fp))
+        if (c == '\n')
+            // append c in hex_arr[inst_no]
+            hex_arr[inst_no] = strtol(hex_arr[inst_no], NULL, 16);
+            inst_no++;            
+    
     // Closing the file
     fclose(fptr);
+}
+
+/**
+ *  * Loads the specified ELF file into the FPGA Memory via PCI AppPF BARx.
+ *   *
+ *    * @param[in]  pci_bar_handle PCIe AppPF BARx's Address Space handle
+ *     * @param[in]  elf_file  ELF file path
+ *      * @returns 0 on success, non-zero on error
+ *       */
+void load_elf(char *elf_file) 
+{
+    int      rc;
+    uint64_t addr = 0UL;
+    FILE     *hfd = NULL;
+    char     read_str[10] = {0};
+    char     objcopy_cmd[2048] = {0};
+
+    /* Convert the ELF File to a Hex file */
+    snprintf(objcopy_cmd, sizeof(objcopy_cmd), "objcopy -O verilog %s %s", elf_file, HEX_FILE_PATH);
+    rc = system(objcopy_cmd);
+    fail_on(rc < 0, out, "Unable to convert ELF file to a Hex file");
+
+    /* Open the Hex file for loading into the FPGA Memory */
+    rc = 1;
+    hfd = fopen(HEX_FILE_PATH, "r");
+    fail_on(hfd == NULL, out, "Unable to open %s\n", HEX_FILE_PATH);
+
+    /* Load data bytes from hex file into the FPGA Memory */
+    while ((feof(hfd) == 0) && (fscanf(hfd, "%s", read_str) != 0)) 
+    {
+        /* Load Address ? */
+        if ((read_str[0] == '@') && (read_str[1]))
+        {
+            sscanf(read_str, "@%lX", &addr);
+            addr -= cmem_base;
+        }
+        
+    }
+    fclose(hfd);
+
+
 }
 
 int main(int argc, char* argv[]){
