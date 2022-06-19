@@ -30,117 +30,9 @@ static uint16_t pci_device_id           = 0xF000; /* PCI Device ID preassigned b
 static pci_bar_handle_t pci_bar_handle  = PCI_BAR_HANDLE_INIT;
 static int pf_id                        = FPGA_APP_PF;
 
-int check_afi_ready(int slot_id) {
-   struct fpga_mgmt_image_info info = {0};
-   int rc;
-
-   /* get local image description, contains status, vendor id, and device id. */
-   rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
-   fail_on(rc, out, "Unable to get AFI information from slot %d. Are you running as root?",slot_id);
-
-   /* check to see if the slot is ready */
-   if (info.status != FPGA_STATUS_LOADED) {
-     rc = 1;
-     fail_on(rc, out, "AFI in Slot %d is not in READY state !", slot_id);
-   }
-
-   printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
-          info.spec.map[FPGA_APP_PF].vendor_id,
-          info.spec.map[FPGA_APP_PF].device_id);
-
-   /* confirm that the AFI that we expect is in fact loaded */
-   if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
-       info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
-     printf("AFI does not show expected PCI vendor id and device ID. If the AFI "
-            "was just loaded, it might need a rescan. Rescanning now.\n");
-
-     rc = fpga_pci_rescan_slot_app_pfs(slot_id);
-     fail_on(rc, out, "Unable to update PF for slot %d",slot_id);
-     /* get local image description, contains status, vendor id, and device id. */
-     rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
-     fail_on(rc, out, "Unable to get AFI information from slot %d",slot_id);
-
-     printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
-            info.spec.map[FPGA_APP_PF].vendor_id,
-            info.spec.map[FPGA_APP_PF].device_id);
-
-     /* confirm that the AFI that we expect is in fact loaded after rescan */
-     if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
-         info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
-       rc = 1;
-       fail_on(rc, out, "The PCI vendor id and device of the loaded AFI are not "
-               "the expected values.");
-     }
-   }
-   
-   return rc;
- out:
-   return 1;
-}
-
-
-// utility func for loading instruction from hex file
-void hexLoader(uint32_t hex_arr [], char hex_file_path[]) {
-    FILE *fptr = fopen(hex_file_path, "r");
-    int inst_no = 0;
-    // Assigning the instructions to array
-    char c;
-    for (c = getc(fp); c != EOF; c = getc(fp))
-        if (c == '\n')
-            // append c in hex_arr[inst_no]
-            hex_arr[inst_no] = strtol(hex_arr[inst_no], NULL, 16);
-            inst_no++;            
-    
-    // Closing the file
-    fclose(fptr);
-}
-
-/**
- *  * Loads the specified ELF file into the FPGA Memory via PCI AppPF BARx.
- *   *
- *    * @param[in]  pci_bar_handle PCIe AppPF BARx's Address Space handle
- *     * @param[in]  elf_file  ELF file path
- *      * @returns 0 on success, non-zero on error
- *       */
-void load_elf(uint32_t hex_arr [], char elf_file_path[]) 
-{
-    int      rc;
-    uint64_t addr = 0UL;
-    FILE     *hfd = NULL;
-    char     read_str[10] = {0};
-    char     objcopy_cmd[2048] = {0};
-
-    /* Convert the ELF File to a Hex file */
-    snprintf(objcopy_cmd, sizeof(objcopy_cmd), "objcopy -O verilog %s %s", elf_file_path, HEX_FILE_PATH);
-    rc = system(objcopy_cmd);
-    fail_on(rc < 0, out, "Unable to convert ELF file to a Hex file");
-
-    /* Open the Hex file for loading into the FPGA Memory */
-    rc = 1;
-    hfd = fopen(HEX_FILE_PATH, "r");
-    fail_on(hfd == NULL, out, "Unable to open %s\n", HEX_FILE_PATH);
-
-    /* Load data bytes from hex file into the FPGA Memory */
-    while ((feof(hfd) == 0) && (fscanf(hfd, "%s", read_str) != 0)) 
-    {
-        /* Load Address ? */
-        if ((read_str[0] == '@') && (read_str[1]))
-        {
-            sscanf(read_str, "@%lX", &addr);
-            addr -= cmem_base;
-        }
-        
-    }
-    fclose(hfd);
-
-    instrLoader(hex_arr, HEX_FILE_PATH);
-
-
-
-}
-
 int main(int argc, char* argv[]){
 
+    /* checking for the number of arguments */
     if(argc != 3){
         printf("Usage: %s <elf_file>/<hex_file> <ddr/dma> \n", argv[0]);
         return 1;
@@ -158,6 +50,7 @@ int main(int argc, char* argv[]){
              instruction   = 0U;                                                // Instruction
     long     delayValue    = WAIT_DELAY;                                        // Delay value
 
+    /* FPGA Init + AFI Ready Check + FPGA PCI Attach */
     rc = fpga_mgmt_init();
     fail_on(rc, out, "Unable to initialize the fpga_mgmt library");
 
@@ -170,6 +63,7 @@ int main(int argc, char* argv[]){
    
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET ON  ---- --- -- -- - -- - - - --- - \n");
 
+    /* Resetting the SU */
     rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);
     fail_on(rc, out, "FAIL TO READ VDIP1");
     printf("CURRENT VDIP VALUE : 0x%02x \n", dip_sw_val);
@@ -186,17 +80,16 @@ int main(int argc, char* argv[]){
     fail_on(rc, out, "FAIL TO READ VDIP1");
     printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
 
-    uint32_t instructions_arr[TOTAL_INSTR];
-    instrLoader(&instructions_arr, TOTAL_INSTR);
-
-    printf("===== Starting with writing into BRAM via BAR 01 =====\n");
+    uint32_t instructions_arr[];
+    argv[1] == "elf" ? elfLoader(instructions_arr, argv[1]) : hexLoader(instructions_arr, argv[1]);
+    printf("===== Starting with writing into %s via %s =====\n", argv[2] == "dma" ? "DMA" : "BRAM" , argv[2] == "dma" ? "DMA" : "PCIe AppPF BAR1");
     
     int i = 0;
     for(i=0; i<TOTAL_INSTR; i++){
         msleep(1UL);
         instruction = instructions_arr[i];
 
-        printf("Writing 0x%08x to BRAM", instruction);
+        printf("Writing 0x%08x to %s", instruction, argv[2] == "dma" ? "DMA" : "PCIe AppPF BAR1");
         printf("ON ADDRESS 0x%08x", address);
         printf("\n");
 
@@ -303,4 +196,108 @@ out:
     fpga_mgmt_close();
 
     
+}
+
+// AWS FPGA func to check if AFI is loaded in slot 
+int check_afi_ready(int slot_id) {
+   struct fpga_mgmt_image_info info = {0};
+   int rc;
+
+   /* get local image description, contains status, vendor id, and device id. */
+   rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
+   fail_on(rc, out, "Unable to get AFI information from slot %d. Are you running as root?",slot_id);
+
+   /* check to see if the slot is ready */
+   if (info.status != FPGA_STATUS_LOADED) {
+     rc = 1;
+     fail_on(rc, out, "AFI in Slot %d is not in READY state !", slot_id);
+   }
+
+   printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
+          info.spec.map[FPGA_APP_PF].vendor_id,
+          info.spec.map[FPGA_APP_PF].device_id);
+
+   /* confirm that the AFI that we expect is in fact loaded */
+   if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
+       info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
+     printf("AFI does not show expected PCI vendor id and device ID. If the AFI "
+            "was just loaded, it might need a rescan. Rescanning now.\n");
+
+     rc = fpga_pci_rescan_slot_app_pfs(slot_id);
+     fail_on(rc, out, "Unable to update PF for slot %d",slot_id);
+     /* get local image description, contains status, vendor id, and device id. */
+     rc = fpga_mgmt_describe_local_image(slot_id, &info,0);
+     fail_on(rc, out, "Unable to get AFI information from slot %d",slot_id);
+
+     printf("AFI PCI  Vendor ID: 0x%x, Device ID 0x%x\n",
+            info.spec.map[FPGA_APP_PF].vendor_id,
+            info.spec.map[FPGA_APP_PF].device_id);
+
+     /* confirm that the AFI that we expect is in fact loaded after rescan */
+     if (info.spec.map[FPGA_APP_PF].vendor_id != pci_vendor_id ||
+         info.spec.map[FPGA_APP_PF].device_id != pci_device_id) {
+       rc = 1;
+       fail_on(rc, out, "The PCI vendor id and device of the loaded AFI are not "
+               "the expected values.");
+     }
+   }
+   
+   return rc;
+ out:
+   return 1;
+}
+
+
+// utility func for loading instruction from hex file
+void hexLoader(uint32_t hex_arr [], char hex_file_path[]) {
+    FILE *fptr = fopen(hex_file_path, "r");
+    int inst_no = 0;
+    // Assigning the instructions to array
+    char c;
+    for (c = getc(fp); c != EOF; c = getc(fp))
+        if (c == '\n')
+            // append c in hex_arr[inst_no]
+            hex_arr[inst_no] = strtol(hex_arr[inst_no], NULL, 16);
+            inst_no++;            
+    
+    // Closing the file
+    fclose(fptr);
+}
+
+// utility func for loading instruction from elf file
+void elfLoader(uint32_t hex_arr [], char elf_file_path[]) 
+{
+    int      rc;
+    uint64_t addr = 0UL;
+    FILE     *hfd = NULL;
+    char     read_str[10] = {0};
+    char     objcopy_cmd[2048] = {0};
+
+    /* Convert the ELF File to a Hex file */
+    snprintf(objcopy_cmd, sizeof(objcopy_cmd), "objcopy -O verilog %s %s", elf_file_path, HEX_FILE_PATH);
+    rc = system(objcopy_cmd);
+    fail_on(rc < 0, out, "Unable to convert ELF file to a Hex file");
+
+    /* Open the Hex file for loading into the FPGA Memory */
+    rc = 1;
+    hfd = fopen(HEX_FILE_PATH, "r");
+    fail_on(hfd == NULL, out, "Unable to open %s\n", HEX_FILE_PATH);
+
+    /* Load data bytes from hex file into the FPGA Memory */
+    while ((feof(hfd) == 0) && (fscanf(hfd, "%s", read_str) != 0)) 
+    {
+        /* Load Address ? */
+        if ((read_str[0] == '@') && (read_str[1]))
+        {
+            sscanf(read_str, "@%lX", &addr);
+            addr -= cmem_base;
+        }
+        
+    }
+    fclose(hfd);
+
+    instrLoader(hex_arr, HEX_FILE_PATH);
+
+
+
 }
