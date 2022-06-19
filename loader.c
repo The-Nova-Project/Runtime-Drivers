@@ -80,8 +80,8 @@ int check_afi_ready(int slot_id) {
 
 
 // utility func for loading instruction from hex file
-void hexLoader(uint32_t hex_arr []){
-    FILE *fptr = fopen("hex.txt", "r");
+void hexLoader(uint32_t hex_arr [], char hex_file_path[]) {
+    FILE *fptr = fopen(hex_file_path, "r");
     int inst_no = 0;
     // Assigning the instructions to array
     char c;
@@ -102,7 +102,7 @@ void hexLoader(uint32_t hex_arr []){
  *     * @param[in]  elf_file  ELF file path
  *      * @returns 0 on success, non-zero on error
  *       */
-void load_elf(char *elf_file) 
+void load_elf(uint32_t hex_arr [], char elf_file_path[]) 
 {
     int      rc;
     uint64_t addr = 0UL;
@@ -111,7 +111,7 @@ void load_elf(char *elf_file)
     char     objcopy_cmd[2048] = {0};
 
     /* Convert the ELF File to a Hex file */
-    snprintf(objcopy_cmd, sizeof(objcopy_cmd), "objcopy -O verilog %s %s", elf_file, HEX_FILE_PATH);
+    snprintf(objcopy_cmd, sizeof(objcopy_cmd), "objcopy -O verilog %s %s", elf_file_path, HEX_FILE_PATH);
     rc = system(objcopy_cmd);
     fail_on(rc < 0, out, "Unable to convert ELF file to a Hex file");
 
@@ -133,28 +133,34 @@ void load_elf(char *elf_file)
     }
     fclose(hfd);
 
+    instrLoader(hex_arr, HEX_FILE_PATH);
+
+
 
 }
 
 int main(int argc, char* argv[]){
 
-    uint8_t   reset_su     = 0U;                    // Reset SU
-    uint16_t  dip_sw_val   = 0U,                    // DIP switch value
-              led_val      = 0U,                    // LED value
-              tohost_val   = TO_HOST;               // To Host value
-    int       slot_id      = 0,                     // Slot ID
-              bar_id       = FPGA_DMA_XDMA,         // Bar ID
-              rc,                                   // Return code
-              opt;                                  // Option
-    uint32_t address       = BRAM_START_ADDR,       // Address
-             instruction   = 0U;                    // Instruction
-    long     delayValue    = WAIT_DELAY;            // Delay value
+    if(argc != 3){
+        printf("Usage: %s <elf_file>/<hex_file> <ddr/dma> \n", argv[0]);
+        return 1;
+    }
 
-    // Initializing the array for instructions
+    uint8_t   reset_su     = 0U;                                                // Reset SU
+    uint16_t  dip_sw_val   = 0U,                                                // DIP switch value
+              led_val      = 0U,                                                // LED value
+              tohost_val   = TO_HOST;                                           // To Host value
+    int       slot_id      = 0,                                                 // Slot ID
+              bar_id       = "dma" == argv[2] ? FPGA_DMA_XDMA : APP_PF_BAR1,    // Bar ID
+              rc,                                                               // Return code
+              opt;                                                              // Option
+    uint32_t address       = BRAM_START_ADDR,                                   // Address
+             instruction   = 0U;                                                // Instruction
+    long     delayValue    = WAIT_DELAY;                                        // Delay value
+
     rc = fpga_mgmt_init();
     fail_on(rc, out, "Unable to initialize the fpga_mgmt library");
 
-    // Getting the slot ID
     rc = check_afi_ready(slot_id);
     fail_on(rc, out, "AFI not ready");
 
