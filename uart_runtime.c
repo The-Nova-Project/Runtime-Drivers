@@ -91,42 +91,29 @@ int check_afi_ready(int slot_id) {
 }
 
 
-// utility func for loading instruction from hex file
-// void instrLoader(uint32_t hex_arr [], int inst_no){
-//     FILE *fptr = fopen("hex.txt", "r");
-//     // Assigning the instructions to array
-//     int i;
-//     for (i = 0; i < inst_no; ++i)
-//     {
-//         fscanf(fptr, "%X", &hex_arr[i]);
-//     }
-//     // Closing the file
-//     fclose(fptr);
-// }
-
 int main(int argc, char **argv){
 
 
     // uint8_t   reset_su          = 0U;
     // uint16_t  dip_sw_val        = 0U;
     // uint32_t tx_control_reg     = tx_enable_interrupt;
-    uint32_t tx_data_reg        = tx_data;
+    // uint32_t intrrupt_enable_value        = interrupt_value
     // uint32_t rx_control_reg     = rx_enable_interrupt;
-    uint32_t tx_status_reg      = tx_sts;
-    uint32_t rx_data_reg        = rx_data;
-    uint32_t rx_status_reg      = rx_sts;
-    // uint32_t intrrupt_enable_value        = interrupt_value;
-    uint32_t data_write_value        = data_value;
-    uint32_t write_value                = data_value;
-    uint32_t valid_status                 = rx_valid_status;
-    uint16_t  dip_sw_val   = 0U;
-    int       slot_id           = 0, 
-              bar_id            = APP_PF_BAR1,
-              bar_id2           = APP_PF_BAR0,
-              rc;
+    // uint32_t   tx_status_reg       = tx_sts;
+    // uint16_t   dip_sw_val          = 0U;
+    uint32_t   tx_data_reg         = tx_data;
+    uint32_t   rx_data_reg         = rx_data;
+    uint32_t   rx_status_reg       = rx_sts;
+    uint32_t   data_write_value    = data_value;
+    uint32_t   write_value         = data_value;
+    uint32_t   valid_status        = rx_valid_status;
+    uint16_t   led_val             = 0U;               
+    int        slot_id             = 0, 
+               bar_id              = APP_PF_BAR1,
+               bar_id2             = APP_PF_BAR0,
+               rc;
             //   opt;
-    // long delayValue1           = WAIT_DELAY1;
-    long delayValue2           = WAIT_DELAY2;
+    long      delayValue2          = WAIT_DELAY2;
 
     rc = fpga_mgmt_init();
     fail_on(rc, out, "Unable to initialize the fpga_mgmt library");
@@ -147,12 +134,12 @@ int main(int argc, char **argv){
     // printf("SLEEP FOR %4ld nanoseconds \n", delayValue1);
     // nanosleep(&delayValue1, &delayValue1);
 
-    rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);
-    fail_on(rc, out, "FAIL TO WRITE VDIP1");
+    // rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);
+    // fail_on(rc, out, "FAIL TO WRITE VDIP1");
 
-    rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);        //set virtual switch to 0
-    fail_on(rc, out, "FAIL TO READ VDIP1");
-    printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
+    // rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);        //set virtual switch to 0
+    // fail_on(rc, out, "FAIL TO READ VDIP1");
+    // printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
 
 
 
@@ -163,17 +150,22 @@ int main(int argc, char **argv){
     printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
     usleep(delayValue2);
 
-    rc = fpga_pci_peek(pci_bar_handle, tx_status_reg, &valid_status);                 //peek tx empty or not
-    fail_on(rc, out, "Unable to read read from the fpga !");
+    // rc = fpga_pci_peek(pci_bar_handle, tx_status_reg, &valid_status);                 //peek tx empty or not
+    // fail_on(rc, out, "Unable to read read from the fpga !");
 
-    dip_sw_val   =   valid_status;
+    // dip_sw_val   =   valid_status;
 
-    rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);
-    fail_on(rc, out, "FAIL TO WRITE VDIP1");
+    // rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);
+    // fail_on(rc, out, "FAIL TO WRITE VDIP1");
 
-    rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);                             //check on virtual switch, if empty means byte transferred
-    fail_on(rc, out, "FAIL TO READ VDIP1");
-    printf("NEW VDIP VALUE  OF TX EPMTY IS: 0x%02x \n", dip_sw_val);
+    // rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);                             //check on virtual switch, if empty means byte transferred
+    // fail_on(rc, out, "FAIL TO READ VDIP1");
+    // printf("NEW VDIP VALUE  OF TX EPMTY IS: 0x%02x \n", dip_sw_val);
+    
+    
+    rc = fpga_mgmt_get_vLED_status(0, &led_val);
+    fail_on(rc, out, "FAIL TO GET LEDs");
+    printf("VLED VALUE: 0x%02x \n", led_val);
 
 
 
@@ -196,15 +188,21 @@ int main(int argc, char **argv){
 
     rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &valid_status);
     fail_on(rc, out, "Unable to read read from the fpga !");
+    printf("Byte received valid value is  - 0x%08x", valid_status);
 
-    dip_sw_val   =   valid_status;
+    // dip_sw_val   =   valid_status;
 
-    rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);                                             //check data valid 
-    fail_on(rc, out, "FAIL TO WRITE VDIP1");
+    // rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);                                             //check data valid 
+    // fail_on(rc, out, "FAIL TO WRITE VDIP1");
 
-    rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);
-    fail_on(rc, out, "FAIL TO READ VDIP1");
-    printf("NEW VDIP VALUE OF RX VAILD IS: 0x%02x \n", dip_sw_val);
+    // rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);
+    // fail_on(rc, out, "FAIL TO READ VDIP1");
+    // printf("NEW VDIP VALUE OF RX VAILD IS: 0x%02x \n", dip_sw_val);
+    
+    
+    rc = fpga_mgmt_get_vLED_status(0, &led_val);		
+    fail_on(rc, out, "FAIL TO GET LEDs");							//check VLED
+    printf("VLED VALUE: 0x%02x \n", led_val);
 
     
 
