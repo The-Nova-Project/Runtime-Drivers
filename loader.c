@@ -7,7 +7,7 @@
 #include <string.h>
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
-#include <utils/lcd.h>
+// #include <utils/lcd.h>
 #include "fpga_dma.h"
 #include <utils/sh_dpi_tasks.h>
 
@@ -24,7 +24,7 @@
 
 
 /*              AFI Specific Logic             */
-const struct logger *logger             = &logger_stdout;
+// const struct logger *logger             = &logger_stdout;
 static uint16_t pci_vendor_id           = 0x1D0F; /* Amazon PCI Vendor ID */
 static uint16_t pci_device_id           = 0xF000; /* PCI Device ID preassigned by Amazon for F1 applications */
 static pci_bar_handle_t pci_bar_handle  = PCI_BAR_HANDLE_INIT;
@@ -80,12 +80,21 @@ int main(int argc, char* argv[]){
     fail_on(rc, out, "FAIL TO READ VDIP1");
     printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
 
-    uint32_t instructions_arr[];
-    argv[1] == "elf" ? elfLoader(instructions_arr, argv[1]) : hexLoader(instructions_arr, argv[1]);
+    if(argv[1] == "elf"){
+        elfConverter(argv[1]);
+    }
+
+
+    int total_instr = count_instructions(argv[1] == "elf" ? HEX_FILE_PATH : argv[1]);
+
+
+    uint32_t instructions_arr[total_instr];
+    // argv[1] == "elf" ? elfLoader(instructions_arr, argv[1]) : hexLoader(instructions_arr, argv[1]);
     printf("===== Starting with writing into %s via %s =====\n", argv[2] == "dma" ? "DMA" : "BRAM" , argv[2] == "dma" ? "DMA" : "PCIe AppPF BAR1");
     
     int i = 0;
-    for(i=0; i<TOTAL_INSTR; i++){
+ 
+    for(i=0; i < total_instr; i++){
         msleep(1UL);
         instruction = instructions_arr[i];
 
@@ -102,7 +111,7 @@ int main(int argc, char* argv[]){
     uint32_t expectedInstruction = 0U;
     address = BRAM_START_ADDR;
     int j = 0;
-    for (j=0; j < TOTAL_INSTR; j++){
+    for (j=0; j < total_instr; j++){
 
         expectedInstruction = instructions_arr[j];
         rc = fpga_pci_peek(pci_bar_handle, address, &instruction);
@@ -130,8 +139,6 @@ int main(int argc, char* argv[]){
 
     rc = fpga_pci_poke(pci_bar_handle, address, instruction);
     fail_on(rc, out, "Unable to write to the fpga !");
-
-    
 
     printf("\n ------ ---- --- --- -- - -- TURNINGN DIP SWITCH / HYDRA RESET OFF  ---- --- -- -- - -- - - - --- - \n");
     
@@ -247,10 +254,27 @@ int check_afi_ready(int slot_id) {
    return 1;
 }
 
+//utility func for counting number of instructions in a file
+int count_instructions(char *filename) {
+    FILE *fp;
+    int count = 0;
+    char line[256];
+
+    fp = fopen(filename, "r");
+    if (fp == NULL) {
+        printf("Error opening file %s\n", filename);
+        return -1;
+    }
+    while (fgets(line, sizeof(line), fp) != NULL) {
+        count++;
+    }
+    fclose(fp);
+    return count;
+}
 
 // utility func for loading instruction from hex file
 void hexLoader(uint32_t hex_arr [], char hex_file_path[]) {
-    FILE *fptr = fopen(hex_file_path, "r");
+    FILE *fp = fopen(hex_file_path, "r");
     int inst_no = 0;
     // Assigning the instructions to array
     char c;
@@ -261,11 +285,11 @@ void hexLoader(uint32_t hex_arr [], char hex_file_path[]) {
             inst_no++;            
     
     // Closing the file
-    fclose(fptr);
+    fclose(fp);
 }
 
 // utility func for loading instruction from elf file
-void elfLoader(uint32_t hex_arr [], char elf_file_path[]) 
+int elfConverter(char elf_file_path[]) 
 {
     int      rc;
     uint64_t addr = 0UL;
@@ -283,21 +307,22 @@ void elfLoader(uint32_t hex_arr [], char elf_file_path[])
     hfd = fopen(HEX_FILE_PATH, "r");
     fail_on(hfd == NULL, out, "Unable to open %s\n", HEX_FILE_PATH);
 
-    /* Load data bytes from hex file into the FPGA Memory */
-    while ((feof(hfd) == 0) && (fscanf(hfd, "%s", read_str) != 0)) 
-    {
-        /* Load Address ? */
-        if ((read_str[0] == '@') && (read_str[1]))
-        {
-            sscanf(read_str, "@%lX", &addr);
-            addr -= cmem_base;
-        }
+    // /* Load data bytes from hex file into the FPGA Memory */
+    // while ((feof(hfd) == 0) && (fscanf(hfd, "%s", read_str) != 0)) 
+    // {
+    //     /* Load Address ? */
+    //     if ((read_str[0] == '@') && (read_str[1]))
+    //     {
+    //         sscanf(read_str, "@%lX", &addr);
+    //         addr -= cmem_base;
+    //     }
         
-    }
+    // }
     fclose(hfd);
 
-    instrLoader(hex_arr, HEX_FILE_PATH);
-
-
+    // instrLoader(hex_arr, HEX_FILE_PATH);
+        return 0;
+    out:
+        return 1;
 
 }
