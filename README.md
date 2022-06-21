@@ -8,7 +8,7 @@ This repo contains [AWS-FPGA](https://github.com/aws/aws-fpga) compatible Runtim
 2. Paste it in your design's `software/runtime` directory.
 3. Open Terminal in this directory.
 4. First type `make driverName` (for example if the driver is loader.c then type `make loader`)
-5. Then once the driver is compiled successfully type `sudo ./driverName` (for example if driver if bramLoader.c then type `sudo ./loader args`)
+5. Then once the driver is compiled successfully type `sudo ./driverName` (for example if driver if bramLoader.c then type `sudo ./loader *args`)
 6. All the interactions that the driver has done with the FPGA will be shown on the terminal screen
 
 ## Drivers
