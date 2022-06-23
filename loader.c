@@ -7,7 +7,7 @@
 #include <string.h>
 #include <fpga_pci.h>
 #include <fpga_mgmt.h>
-// #include <utils/lcd.h>
+#include <utils/lcd.h>
 #include "fpga_dma.h"
 #include <utils/sh_dpi_tasks.h>
 
@@ -32,11 +32,7 @@ static int pf_id                        = FPGA_APP_PF;
 
 int main(int argc, char* argv[]){
 
-    /* checking for the number of arguments */
-    if(argc != 3){
-        printf("Usage: %s <elf_file>/<hex_file> <ddr/dma> \n", argv[0]);
-        return 1;
-    }
+    
 
     uint8_t   reset_su     = 0U;                                                // Reset SU
     uint16_t  dip_sw_val   = 0U,                                                // DIP switch value
@@ -49,6 +45,12 @@ int main(int argc, char* argv[]){
     uint32_t address       = BRAM_START_ADDR,                                   // Address
              instruction   = 0U;                                                // Instruction
     long     delayValue    = WAIT_DELAY;                                        // Delay value
+
+    /* checking for the number of arguments */
+    if(argc != 3){
+        printf("Usage: %s <elf_file>/<hex_file> <ddr/dma> \n", argv[0]);
+        return 1;
+    }
 
     /* FPGA Init + AFI Ready Check + FPGA PCI Attach */
     rc = fpga_mgmt_init();
