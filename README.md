@@ -4,7 +4,7 @@ This repo contains [AWS-FPGA](https://github.com/aws/aws-fpga) compatible Runtim
 
 # How to Run
 
-1. First Copy the Driver you want to run. (Considering the AFI is loaded)
+1. First Copy the Driver you want to run. (Considering the AFI is loaded in slot 0)
 2. Paste it in your design's `software/runtime` directory.
 3. Open Terminal in this directory.
 4. First type `make driverName` (for example if the driver is loader.c then type `make loader`)
