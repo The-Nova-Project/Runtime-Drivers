@@ -19,11 +19,11 @@
 #define WAIT_DELAY2             100
 #define tx_enable_interrupt     0x0004000C      //for bar1 transmit enable interrupt
 #define tx_data                 0x80000         //for bar1 tx data
-#define tx_sts                  0x00040008      //UART1 status reg
+#define tx_sts                  0x80008      //UART1 status reg
 #define rx_enable_interrupt     0x0000000C      ////for bar1 receive enable interrupt
 #define rx_data                 0x000000        //read data from receiver
 #define rx_valid_status         0x0             //by default value is 0
-#define rx_sts                  0x800008        //UART2 status reg
+#define rx_sts                  0x000008        //UART2 status reg
 #define tx_empty_status         0x0
 
 #define interrupt_value         0x10
@@ -103,7 +103,7 @@ int main(int argc, char **argv){
     // uint16_t   dip_sw_val          = 0U;
     uint32_t   tx_data_reg         = tx_data;
     uint32_t   rx_data_reg         = rx_data;
-    uint32_t   rx_status_reg       = rx_sts;
+    uint32_t   tx_status_reg       = tx_sts;
     uint32_t   data_write_value    = data_value;
     uint32_t   write_value         = 0x0;
     uint32_t   valid_status        = rx_valid_status;
@@ -194,7 +194,7 @@ int main(int argc, char **argv){
     printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
     usleep(delayValue2);
 
-    rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &valid_status);
+    rc = fpga_pci_peek(pci_bar_handle, tx_status_reg, &valid_status);
     fail_on(rc, out, "Unable to read read from the fpga !");
     printf("Byte received valid value is  - 0x%08x", valid_status);
 
@@ -217,7 +217,7 @@ int main(int argc, char **argv){
     
 
 
-    rc = fpga_pci_peek(pci_bar_handle, rx_data_reg, &write_value);
+    rc = fpga_pci_peek(pci_bar_handle, tx_data_reg, &write_value);
     fail_on(rc, out, "Unable to read read from the fpga !");                                 //read byte received
 
     if(write_value == data_write_value){
