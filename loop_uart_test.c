@@ -102,7 +102,7 @@ int main(int argc, char **argv){
     // uint32_t   tx_status_reg       = tx_sts;
     // uint16_t   dip_sw_val          = 0U;
     uint32_t   tx_data_reg         = tx_data;
-    uint32_t   rx_data_reg         = rx_data;
+    // uint32_t   rx_data_reg         = rx_data;
     uint32_t   tx_status_reg       = tx_sts;
     uint32_t   data_write_value    = data_value;
     uint32_t   write_value         = 0x0;
