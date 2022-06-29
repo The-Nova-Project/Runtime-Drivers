@@ -107,14 +107,14 @@ int main(int argc, char **argv){
     uint32_t   data_write_value    = data_value;
     uint32_t   write_value         = 0x0;
     uint32_t   valid_status        = rx_valid_status;
-    uint16_t   led_val             = 0U;               
+    // uint16_t   led_val             = 0U;               
     int        slot_id             = 0, 
                bar_id              = APP_PF_BAR1,
                bar_id2             = APP_PF_BAR0,
                rc;
             //   opt;
     long      delayValue2          = WAIT_DELAY2;
-    char chr;
+    
 
     rc = fpga_mgmt_init();
     fail_on(rc, out, "Unable to initialize the fpga_mgmt library");
