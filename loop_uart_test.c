@@ -18,8 +18,8 @@
 #define WAIT_DELAY1             1200
 #define WAIT_DELAY2             100
 #define tx_enable_interrupt     0x0004000C      //for bar1 transmit enable interrupt
-#define tx_data                 0x80000         //for bar1 tx data
-#define tx_sts                  0x80008      //UART1 status reg
+#define tx_data                 0x00000         //for bar1 tx data
+#define tx_sts                  0x00008      //UART1 status reg
 #define rx_enable_interrupt     0x0000000C      ////for bar1 receive enable interrupt
 #define rx_data                 0x000000        //read data from receiver
 #define rx_valid_status         0x0             //by default value is 0
