@@ -32,8 +32,6 @@ static int pf_id                        = FPGA_APP_PF;
 
 int main(int argc, char* argv[]){
 
-    
-
     uint8_t   reset_su     = 0U;                                                // Reset SU
     uint16_t  dip_sw_val   = 0U,                                                // DIP switch value
               led_val      = 0U,                                                // LED value
@@ -41,16 +39,28 @@ int main(int argc, char* argv[]){
     int       slot_id      = 0,                                                 // Slot ID
               bar_id       = "dma" == argv[2] ? FPGA_DMA_XDMA : APP_PF_BAR1,    // Bar ID
               rc,                                                               // Return code
-              opt;                                                              // Option
+              opt,
+              i,j;                                                              // Option
     uint32_t address       = BRAM_START_ADDR,                                   // Address
-             instruction   = 0U;                                                // Instruction
+             instruction   = 0U,
+             pass_val = PASSED_VAL,
+             fail_val = FAILED_VAL;                                                // Instruction
     long     delayValue    = WAIT_DELAY;                                        // Delay value
 
     /* checking for the number of arguments */
-    if(argc != 3){
+    if (argc != 3){
         printf("Usage: %s <elf_file>/<hex_file> <ddr/dma> \n", argv[0]);
         return 1;
     }
+
+    /* Reading instructions via elf or hex */
+     if(argv[1] == "elf"){
+        elfConverter(argv[1]);
+    }
+    int total_instr = count_instructions(argv[1] == "elf" ? HEX_FILE_PATH : argv[1]);
+    uint32_t instructions_arr[total_instr];
+    uint32_t expectedInstruction = 0U;
+
 
     /* FPGA Init + AFI Ready Check + FPGA PCI Attach */
     rc = fpga_mgmt_init();
@@ -82,19 +92,10 @@ int main(int argc, char* argv[]){
     fail_on(rc, out, "FAIL TO READ VDIP1");
     printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
 
-    if(argv[1] == "elf"){
-        elfConverter(argv[1]);
-    }
-
-
-    int total_instr = count_instructions(argv[1] == "elf" ? HEX_FILE_PATH : argv[1]);
-
-
-    uint32_t instructions_arr[total_instr];
+   
     // argv[1] == "elf" ? elfLoader(instructions_arr, argv[1]) : hexLoader(instructions_arr, argv[1]);
     printf("===== Starting with writing into %s via %s =====\n", argv[2] == "dma" ? "DMA" : "BRAM" , argv[2] == "dma" ? "DMA" : "PCIe AppPF BAR1");
     
-    int i = 0;
  
     for(i=0; i < total_instr; i++){
         msleep(1UL);
@@ -110,9 +111,7 @@ int main(int argc, char* argv[]){
         address = address + 4;
     }
 
-    uint32_t expectedInstruction = 0U;
     address = BRAM_START_ADDR;
-    int j = 0;
     for (j=0; j < total_instr; j++){
 
         expectedInstruction = instructions_arr[j];
@@ -155,9 +154,6 @@ int main(int argc, char* argv[]){
     rc = fpga_mgmt_get_vLED_status(0, &led_val);
     fail_on(rc, out, "FAIL TO GET LEDs");
     printf("VLED VALUE: 0x%02x \n", led_val);
-
-    uint32_t pass_val = PASSED_VAL;
-    uint32_t fail_val = FAILED_VAL;
 
     printf("\n ------ ---- --- --- -- - -- PEEKING THRU TO-HOST  ---- --- -- -- - -- - - - --- - \n");
     
