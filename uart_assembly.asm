@@ -1,10 +1,14 @@
 li s0 0x80000
 li a4 1
-li x1 1
+li x1 16
+li x5 0x10
+li x6 4
+sw x5 0xc(s0)
 loop:
 lw a3 0x8(s0)
 and x3 a3 x1
-beq a4 x3 exit
+srl x8 x3 x6
+beq a4 x8 exit
 jal loop
 exit:
 
