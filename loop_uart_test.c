@@ -19,15 +19,16 @@
 #define WAIT_DELAY2             100
 #define tx_enable_interrupt     0x0004000C      //for bar1 transmit enable interrupt
 #define tx_data                 0x00000         //for bar1 tx data
+#define tx_data_poke            0x00004         //for bar1 tx data
 #define tx_sts                  0x00008      //UART1 status reg
-#define rx_enable_interrupt     0x0000000C      ////for bar1 receive enable interrupt
+#define rx_enable_interrupt     0x0000C      ////for bar1 receive enable interrupt
 #define rx_data                 0x000000        //read data from receiver
 #define rx_valid_status         0x0             //by default value is 0
 #define rx_sts                  0x000008        //UART2 status reg
 #define tx_empty_status         0x0
 
 #define interrupt_value         0x10
-#define data_value              0xa      
+#define data_value              0xabc     
 
 #define ZERO_VAL                0x00
 #define TO_HOST                 0x120
@@ -97,23 +98,28 @@ int main(int argc, char **argv){
     // uint8_t   reset_su          = 0U;
     // uint16_t  dip_sw_val        = 0U;
     // uint32_t tx_control_reg     = tx_enable_interrupt;
-    // uint32_t intrrupt_enable_value        = interrupt_value
-    // uint32_t rx_control_reg     = rx_enable_interrupt;
+    uint32_t intrrupt_enable_value        = interrupt_value
+    uint32_t rx_control_reg     = rx_enable_interrupt;
     // uint32_t   tx_status_reg       = tx_sts;
     // uint16_t   dip_sw_val          = 0U;
     uint32_t   tx_data_reg         = tx_data;
+    uint32_t   tx_reg_poke         = tx_data_poke;
     // uint32_t   rx_data_reg         = rx_data;
-    uint32_t   tx_status_reg       = tx_sts;
-    uint32_t   data_write_value    = data_value;
-    uint32_t   write_value         = 0x0;
-    uint32_t   valid_status        = rx_valid_status;
+    uint32_t   rx_status_reg       = tx_sts;
+    // uint32_t   data_write_value    = data_value;
+    uint32_t   write_value         = tx_empty_status;
+    int        for_AND             = 16;
+    int        result_AND         ;
+    uint32_t   intr_sts            ;
+    // uint32_t   valid_status        = rx_valid_status;
     // uint16_t   led_val             = 0U;               
     int        slot_id             = 0, 
-               bar_id              = APP_PF_BAR1,
+//                bar_id              = APP_PF_BAR1,
                bar_id2             = APP_PF_BAR0,
                rc;
             //   opt;
     long      delayValue2          = WAIT_DELAY2;
+    char chr;
     
 
     rc = fpga_mgmt_init();
@@ -122,54 +128,8 @@ int main(int argc, char **argv){
     rc = check_afi_ready(slot_id);
     fail_on(rc, out, "AFI not ready");
 
-    rc = fpga_pci_attach(slot_id, pf_id, bar_id, 0, &pci_bar_handle);
+    rc = fpga_pci_attach(slot_id, pf_id, bar_id2, 0, &pci_bar_handle);
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
-
-
-    printf("\n ------ ---- --- --- -- - -- writing data to TX  ---- --- -- -- - -- - - - --- - \n");
-
-
-    // printf("enable interrupt 0x%08x of TX register \n", intrrupt_enable_value/*, tx_control_reg*/);   //interrupt enable
-    // rc = fpga_pci_poke(pci_bar_handle, tx_control_reg, intrrupt_enable_value);
-    // fail_on(rc, out, "Unable to write to the fpga !");
-
-    // printf("SLEEP FOR %4ld nanoseconds \n", delayValue1);
-    // nanosleep(&delayValue1, &delayValue1);
-
-    // rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);
-    // fail_on(rc, out, "FAIL TO WRITE VDIP1");
-
-    // rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);        //set virtual switch to 0
-    // fail_on(rc, out, "FAIL TO READ VDIP1");
-    // printf("NEW VDIP VALUE: 0x%02x \n", dip_sw_val);
-
-
-
-    printf("writing 0x%08x to TX register \n", data_write_value/*, tx_data_reg*/);    //write data
-    rc = fpga_pci_poke(pci_bar_handle, tx_data_reg, data_write_value);
-    fail_on(rc, out, "Unable to write to the fpga !");
-
-    printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
-    usleep(delayValue2);
-
-    // rc = fpga_pci_peek(pci_bar_handle, tx_status_reg, &valid_status);                 //peek tx empty or not
-    // fail_on(rc, out, "Unable to read read from the fpga !");
-
-    // dip_sw_val   =   valid_status;
-
-    // rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);
-    // fail_on(rc, out, "FAIL TO WRITE VDIP1");
-
-    // rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);                             //check on virtual switch, if empty means byte transferred
-    // fail_on(rc, out, "FAIL TO READ VDIP1");
-    // printf("NEW VDIP VALUE  OF TX EPMTY IS: 0x%02x \n", dip_sw_val);
-    
-    
-    // rc = fpga_mgmt_get_vLED_status(0, &led_val);
-    // fail_on(rc, out, "FAIL TO GET LEDs");
-    // printf("VLED VALUE: 0x%02x \n", led_val);
-
-
 
 
 
@@ -177,16 +137,12 @@ int main(int argc, char **argv){
 
     printf("\n ------ ---- --- --- -- - -- reading data from RX  ---- --- -- -- - -- - - - --- - \n");
 
-
-
-    rc = fpga_pci_attach(slot_id, pf_id, bar_id2, 0, &pci_bar_handle);
-    fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
-
     
 
-    // printf("writing 0x%08x to RX register \n", intrrupt_enable_value/*, rx_control_reg*/);    //interrupt enable rx
-    // rc = fpga_pci_poke(pci_bar_handle, rx_control_reg, intrrupt_enable_value);
-    // fail_on(rc, out, "Unable to write to the fpga !");
+    printf("writing 0x%08x to RX register \n", intrrupt_enable_value);    //interrupt enable rx
+    rc = fpga_pci_poke(pci_bar_handle, rx_control_reg, intrrupt_enable_value);
+    fail_on(rc, out, "Unable to write to the fpga !");
+    printf("\n")
 
     printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
     usleep(delayValue2);
@@ -194,24 +150,27 @@ int main(int argc, char **argv){
     printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
     usleep(delayValue2);
 
-    rc = fpga_pci_peek(pci_bar_handle, tx_status_reg, &valid_status);
+   
+   rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
     fail_on(rc, out, "Unable to read read from the fpga !");
-    printf("Byte received valid value is  - 0x%08x", valid_status);
+    printf(" valid value is  - 0x%08x", intr_sts);
+    printf("\n")
 
-    // dip_sw_val   =   valid_status;
 
-    // rc = fpga_mgmt_set_vDIP(slot_id, dip_sw_val);                                             //check data valid 
-    // fail_on(rc, out, "FAIL TO WRITE VDIP1");
-
-    // rc = fpga_mgmt_get_vDIP_status(slot_id, &dip_sw_val);
-    // fail_on(rc, out, "FAIL TO READ VDIP1");
-    // printf("NEW VDIP VALUE OF RX VAILD IS: 0x%02x \n", dip_sw_val);
+    result_AND = intr_sts & for_AND;
     
-    
-    // rc = fpga_mgmt_get_vLED_status(0, &led_val);		
-    // fail_on(rc, out, "FAIL TO GET LEDs");							//check VLED
-    // printf("VLED VALUE: 0x%02x \n", led_val);
 
+    while (result_AND != 16)
+    {
+        rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
+        fail_on(rc, out, "Unable to read read from the fpga !");
+        
+        result_AND = intr_sts & for_AND;
+        
+    }
+
+    printf("valid value is  - 0x%08x", intr_sts);
+    printf("\n")
     
 
     
@@ -220,11 +179,13 @@ int main(int argc, char **argv){
     rc = fpga_pci_peek(pci_bar_handle, tx_data_reg, &write_value);
     fail_on(rc, out, "Unable to read read from the fpga !");                                 //read byte received
 
-    if(write_value == data_write_value){
-            printf("PASSSED  - 0x%08x", write_value);
-        } else {
-            printf("FAILED  - 0x%08x", write_value);
-        }
+    printf("value received is - '%c'", write_value);
+
+    // if(write_value == chr){
+    //         printf(" PASSSED");
+    //     } else {
+    //         printf("FAILED");
+    //     }
 
 out:
     /* clean up */
