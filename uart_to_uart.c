@@ -160,11 +160,12 @@ int main(int argc, char **argv){
         fail_on(rc, out, "Unable to read read from the fpga !");
         
         result_AND = intr_sts & for_AND;
+        printf("Result of AND is %d" , result_AND);
         
     }
 
-    printf("Result of AND is %d" , result_AND);
-    printf("\n")
+    
+    printf("\n");
 
     printf("Exit from loop ");
     printf("\n");
