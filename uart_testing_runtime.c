@@ -112,8 +112,8 @@ int main(int argc, char **argv){
     // uint32_t   valid_status        = rx_valid_status;
     // uint16_t   led_val             = 0U;               
     int        slot_id             = 0, 
-               bar_id              = APP_PF_BAR1,
-              //  bar_id2             = APP_PF_BAR0,
+//                bar_id              = APP_PF_BAR1,
+               bar_id2             = APP_PF_BAR0,
                rc;
             //   opt;
     long      delayValue2          = WAIT_DELAY2;
@@ -126,7 +126,7 @@ int main(int argc, char **argv){
     rc = check_afi_ready(slot_id);
     fail_on(rc, out, "AFI not ready");
 
-    rc = fpga_pci_attach(slot_id, pf_id, bar_id, 0, &pci_bar_handle);
+    rc = fpga_pci_attach(slot_id, pf_id, bar_id2, 0, &pci_bar_handle);
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
 
 
@@ -186,8 +186,8 @@ int main(int argc, char **argv){
 
 
 
-    rc = fpga_pci_attach(slot_id, pf_id, bar_id, 0, &pci_bar_handle);
-    fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
+//     rc = fpga_pci_attach(slot_id, pf_id, bar_id, 0, &pci_bar_handle);
+//     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
 
     
 
