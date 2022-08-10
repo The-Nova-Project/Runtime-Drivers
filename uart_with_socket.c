@@ -87,18 +87,20 @@ int check_afi_ready(int slot_id) {
 int main(int argc, char **argv){
 
 
-    // uint32_t intrrupt_enable_value        = interrupt_value;
-    // uint32_t rx_control_reg        = rx_enable_interrupt;
+    uint32_t intrrupt_enable_value        = interrupt_value;
+    uint32_t rx_control_reg        = rx_enable_interrupt;
     uint32_t   rx_data_reg         = rx_data;
-    // uint32_t   rx_status_reg       = rx_sts_reg;
+    uint32_t   rx_status_reg       = rx_sts_reg;
     // uint32_t   data_write_value    = data_value;
-    uint32_t   write_value         = 0x0;
-    // uint32_t   intr_sts            ;             
+    uint32_t   write_value          ;
+    int        for_AND             = 16;
+    int        result_AND         ;
+    uint32_t   intr_sts            ;             
     int        slot_id             = 0, 
               //  bar_id              = APP_PF_BAR1,
                bar_id2             = APP_PF_BAR0,
                rc;
-    long      delayValue2          = WAIT_DELAY2;
+    // long      delayValue2          = WAIT_DELAY2;
     
 
     rc = fpga_mgmt_init();
@@ -119,29 +121,41 @@ int main(int argc, char **argv){
 
     
 
-    // printf("writing 0x%08x to RX register \n", intrrupt_enable_value);  
-    // rc = fpga_pci_poke(pci_bar_handle, rx_control_reg, intrrupt_enable_value);
-    // fail_on(rc, out, "Unable to write to the fpga !");
+    printf("writing 0x%08x to RX register \n", intrrupt_enable_value);  
+    rc = fpga_pci_poke(pci_bar_handle, rx_control_reg, intrrupt_enable_value);
+    fail_on(rc, out, "Unable to write to the fpga !");
 
+
+    rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
+    fail_on(rc, out, "Unable to read read from the fpga !");
+    printf("Byte received valid value is  - 0x%08x", intr_sts);
+
+
+    result_AND = intr_sts & for_AND;
     
 
-    // while (intr_sts[4] == 0x0)
-    // {
-    //     rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
-    //     fail_on(rc, out, "Unable to read read from the fpga !");
-    //     printf("Byte received valid value is  - 0x%08x", intr_sts);
-    // }
+    while (result_AND != 16)
+    {
+        rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
+        fail_on(rc, out, "Unable to read read from the fpga !");
+        printf("Byte received valid value is  - 0x%08x", intr_sts);
+
+        result_AND = intr_sts & for_AND;
+        
+    }
 
 
-    printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
-    usleep(delayValue2);
+    // printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
+    // usleep(delayValue2);
 
-    printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
-    usleep(delayValue2);
+    // printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
+    // usleep(delayValue2);
 
     rc = fpga_pci_peek(pci_bar_handle, rx_data_reg, &write_value);
     fail_on(rc, out, "Unable to read read from the fpga !");                            
     printf("The received value is  - 0x%08x", write_value);
+
+    printf("\n");
 
 
 
@@ -220,6 +234,9 @@ int main(int argc, char **argv){
 	// char hello[100];
 	// scanf("%[^\n]%*c", hello);
 	
+
+  printf("Your chararcter is %s" , hello);
+  printf("\n");
 	send(new_socket, hello, strlen(hello), 0);
 	printf("Your message sent\n");
 	
