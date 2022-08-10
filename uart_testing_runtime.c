@@ -20,6 +20,7 @@
 #define WAIT_DELAY2             100
 #define tx_enable_interrupt     0x0004000C      //for bar1 transmit enable interrupt
 #define tx_data                 0x00000         //for bar1 tx data
+#define tx_data_poke            0x00004         //for bar1 tx data
 #define tx_sts                  0x00008      //UART1 status reg
 #define rx_enable_interrupt     0x0000000C      ////for bar1 receive enable interrupt
 #define rx_data                 0x000000        //read data from receiver
@@ -103,6 +104,7 @@ int main(int argc, char **argv){
     // uint32_t   tx_status_reg       = tx_sts;
     // uint16_t   dip_sw_val          = 0U;
     uint32_t   tx_data_reg         = tx_data;
+    uint32_t   tx_reg_poke         = tx_data_poke;
     // uint32_t   rx_data_reg         = rx_data;
     // uint32_t   tx_status_reg       = tx_sts;
     // uint32_t   data_write_value    = data_value;
@@ -151,7 +153,7 @@ int main(int argc, char **argv){
 
 
     printf("writing '%c' to TX register \n", chr/*, tx_data_reg*/);    //write data
-    rc = fpga_pci_poke(pci_bar_handle, tx_data_reg, chr);
+    rc = fpga_pci_poke(pci_bar_handle, tx_reg_poke, chr);
     fail_on(rc, out, "Unable to write to the fpga !");
 
     printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
