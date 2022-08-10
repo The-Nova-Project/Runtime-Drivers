@@ -88,9 +88,9 @@ int main(int argc, char **argv){
     uint32_t   send_data           = data_value;
     uint32_t   tx_transmit         = tx_transmit_reg;
     uint32_t   intrrupt_enable_value = interrupt_value;
-    uint32_t   rx_control          = rx_uart_control_reg
-    uint32_t   rx_status           = rx_uart_status_reg
-    uint32_t   rx_data_read        = rx_uart
+    uint32_t   rx_control          = rx_uart_control_reg;
+    uint32_t   rx_status           = rx_uart_status_reg;
+    uint32_t   rx_data_read        = rx_uart;
     uint32_t   write_value         ;
     int        for_AND             = 16;
     int        result_AND         ;
@@ -101,7 +101,7 @@ int main(int argc, char **argv){
                rc;
             //   opt;
     long      delayValue2          = WAIT_DELAY2;
-    char chr;
+
     
 
     rc = fpga_mgmt_init();
@@ -141,14 +141,14 @@ int main(int argc, char **argv){
     printf("writing 0x%08x to enable interrupt \n", intrrupt_enable_value);    //interrupt enable rx
     rc = fpga_pci_poke(pci_bar_handle, rx_control, intrrupt_enable_value);
     fail_on(rc, out, "Unable to write to the fpga !");
-    printf("\n")
+    printf("\n");
 
 
    
    rc = fpga_pci_peek(pci_bar_handle, rx_status, &intr_sts);
     fail_on(rc, out, "Unable to read read from the fpga !");
     printf(" valid value is  - 0x%08x", intr_sts);
-    printf("\n")
+    printf("\n");
 
 
     result_AND = intr_sts & for_AND;
@@ -163,11 +163,11 @@ int main(int argc, char **argv){
         
     }
 
-    printf("Exit from loop ")
-    printf("\n")
+    printf("Exit from loop ");
+    printf("\n");
 
     printf("valid value is  - 0x%08x", intr_sts);
-    printf("\n")
+    printf("\n");
     
 
     
