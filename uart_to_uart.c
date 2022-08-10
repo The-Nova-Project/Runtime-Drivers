@@ -163,6 +163,9 @@ int main(int argc, char **argv){
         
     }
 
+    printf("Result of AND is %d" , result_AND);
+    printf("\n")
+
     printf("Exit from loop ");
     printf("\n");
 
