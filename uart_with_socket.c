@@ -84,7 +84,7 @@ int check_afi_ready(int slot_id) {
 }
 
 
-int main(int argc, char **argv){
+int main2(uint32_t final_val){
 
 
     uint32_t intrrupt_enable_value        = interrupt_value;
@@ -155,109 +155,12 @@ int main(int argc, char **argv){
     fail_on(rc, out, "Unable to read read from the fpga !");                            
     printf("The received value is  - 0x%08x", write_value);
 
+    final_val = write_value;
+
     printf("\n");
 
 
-
-
-  
-
-
-
-
-
-
-
-
-  int server_fd, new_socket ;
-	struct sockaddr_in address;
-	int opt = 1;
-	int addrlen = sizeof(address);
-	// char buffer[1024] = { 0 };
-	// char* hello = "Hello from server";
-
-  char str[100];
-  sprintf(str, "%d", write_value);
-	char* hello = str;
-
-
-	// Creating socket file descriptor
-	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0))
-		== 0) {
-		perror("socket failed");
-		exit(EXIT_FAILURE);
-	}
-
-	// Forcefully attaching socket to the port 8080
-	if (setsockopt(server_fd, SOL_SOCKET,
-				SO_REUSEADDR , &opt,
-				sizeof(opt))) {
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
-
-
-	if (setsockopt(server_fd, SOL_SOCKET,
-				 SO_REUSEPORT, &opt,
-				sizeof(opt))) {
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
-
-
-	address.sin_family = AF_INET;
-	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons(PORT);
-
-	// Forcefully attaching socket to the port 8080
-	if (bind(server_fd, (struct sockaddr*)&address,
-			sizeof(address))
-		< 0) {
-		perror("bind failed");
-		exit(EXIT_FAILURE);
-	}
-	if (listen(server_fd, 3) < 0) {
-		perror("listen");
-		exit(EXIT_FAILURE);
-	}
-	if ((new_socket
-		= accept(server_fd, (struct sockaddr*)&address,
-				(socklen_t*)&addrlen))
-		< 0) {
-		perror("accept");
-		exit(EXIT_FAILURE);
-	}
-
-	// valread = read(new_socket, buffer, 1024);
-	// printf("%s\n", buffer);
-
-	// char hello[100];
-	// scanf("%[^\n]%*c", hello);
-	
-
-  printf("Your chararcter is %s" , hello);
-  printf("\n");
-	send(new_socket, hello, strlen(hello), 0);
-	printf("Your message sent\n");
-	
-// closing the connected socket
-	close(new_socket);
-// closing the listening socket
-	shutdown(server_fd, SHUT_RDWR);
 	return 0;
-
-
-
-
-  
-
-
-
-
-
-
-
-
 
 
 
@@ -276,4 +179,83 @@ out:
     fpga_mgmt_close();
 
     
+}
+
+int main(int argc, char **argv){
+
+  // int server_fd, new_socket ;
+	// struct sockaddr_in address;
+	// int opt = 1;
+	// int addrlen = sizeof(address);
+	// // char buffer[1024] = { 0 };
+	// // char* hello = "Hello from server";
+
+  // char str[100];
+	
+
+
+	// // Creating socket file descriptor
+	// if ((server_fd = socket(AF_INET, SOCK_STREAM, 0))
+	// 	== 0) {
+	// 	perror("socket failed");
+	// 	exit(EXIT_FAILURE);
+	// }
+
+	// // Forcefully attaching socket to the port 8080
+	// if (setsockopt(server_fd, SOL_SOCKET,
+	// 			SO_REUSEADDR , &opt,
+	// 			sizeof(opt))) {
+	// 	perror("setsockopt");
+	// 	exit(EXIT_FAILURE);
+	// }
+
+
+	// if (setsockopt(server_fd, SOL_SOCKET,
+	// 			 SO_REUSEPORT, &opt,
+	// 			sizeof(opt))) {
+	// 	perror("setsockopt");
+	// 	exit(EXIT_FAILURE);
+	// }
+
+
+	// address.sin_family = AF_INET;
+	// address.sin_addr.s_addr = INADDR_ANY;
+	// address.sin_port = htons(PORT);
+
+	// // Forcefully attaching socket to the port 8080
+	// if (bind(server_fd, (struct sockaddr*)&address,
+	// 		sizeof(address))
+	// 	< 0) {
+	// 	perror("bind failed");
+	// 	exit(EXIT_FAILURE);
+	// }
+	// if (listen(server_fd, 3) < 0) {
+	// 	perror("listen");
+	// 	exit(EXIT_FAILURE);
+	// }
+	// if ((new_socket
+	// 	= accept(server_fd, (struct sockaddr*)&address,
+	// 			(socklen_t*)&addrlen))
+	// 	< 0) {
+	// 	perror("accept");
+	// 	exit(EXIT_FAILURE);
+	// }
+
+
+	uint32_t final_val = 0;
+	main2(final_val);
+//   sprintf(str, "%d", final_val);
+//   char* hello = str;
+
+
+//   printf("Your chararcter is %s" , hello);
+//   printf("\n");
+// 	send(new_socket, hello, strlen(hello), 0);
+// 	printf("Your message sent\n");
+	
+// // closing the connected socket
+// 	close(new_socket);
+// // closing the listening socket
+// 	shutdown(server_fd, SHUT_RDWR);
+  return 1;
 }
