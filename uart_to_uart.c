@@ -85,7 +85,6 @@ int main(int argc, char **argv){
 
   
     
-    uint32_t   tx_data_reg         = tx_data;
     uint32_t   send_data           = data_value;
     uint32_t   tx_transmit         = tx_transmit_reg;
     uint32_t   intrrupt_enable_value = interrupt_value;
