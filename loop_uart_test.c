@@ -169,6 +169,9 @@ int main(int argc, char **argv){
         
     }
 
+    printf("Exit from loop ")
+    printf("\n")
+
     printf("valid value is  - 0x%08x", intr_sts);
     printf("\n")
     
