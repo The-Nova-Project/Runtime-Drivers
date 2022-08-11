@@ -180,7 +180,7 @@ int main(int argc, char **argv){
     rc = fpga_pci_peek(pci_bar_handle, rx_data_read, &write_value);
     fail_on(rc, out, "Unable to read read from the fpga !");                                 //read byte received
 
-    printf("value received is - '%c'", write_value);
+    printf("value received is - '%d'", write_value);
 
     // if(write_value == chr){
     //         printf(" PASSSED");
