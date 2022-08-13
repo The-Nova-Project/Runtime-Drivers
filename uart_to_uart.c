@@ -13,6 +13,7 @@
 
 #define tx_uart                     0x00000
 #define tx_transmit_reg             0x00004
+#define tx_uart_control_reg         0x0000C
 #define rx_uart                     0x80000
 #define rx_uart_control_reg         0x8000C
 #define rx_uart_status_reg          0x80008
@@ -87,6 +88,7 @@ int main(int argc, char **argv){
     
     uint32_t   send_data           = data_value;
     uint32_t   tx_transmit         = tx_transmit_reg;
+    uint32_t   tx_control          = tx_uart_control_reg;
     uint32_t   intrrupt_enable_value = interrupt_value;
     uint32_t   rx_control          = rx_uart_control_reg;
     uint32_t   rx_status           = rx_uart_status_reg;
@@ -118,7 +120,14 @@ int main(int argc, char **argv){
 
     
 
-    printf("writing 0x%08x to transmit register \n", send_data);    //interrupt enable rx
+    printf("writing 0x%08x to enable interrupt \n", intrrupt_enable_value);    //interrupt enable rx
+    rc = fpga_pci_poke(pci_bar_handle, tx_control, intrrupt_enable_value);
+    fail_on(rc, out, "Unable to write to the fpga !");
+    printf("\n");
+
+
+
+    printf("writing 0x%08x to transmit register \n", send_data);    
     rc = fpga_pci_poke(pci_bar_handle, tx_transmit, send_data);
     fail_on(rc, out, "Unable to write to the fpga !");
     printf("\n");
