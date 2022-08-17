@@ -11,12 +11,13 @@
 #include <utils/sh_dpi_tasks.h>
 #include <time.h>
 
-#define tx_uart                     0x00000
-#define tx_transmit_reg             0x00004
-#define tx_uart_control_reg         0x0000C
-#define rx_uart                     0x80000
-#define rx_uart_control_reg         0x8000C
-#define rx_uart_status_reg          0x80008
+#define tx_uart                     0x80000000
+#define tx_transmit_reg             0x80000004
+#define tx_uart_control_reg         0x8000000C
+
+#define rx_uart                     0x80100000
+#define rx_uart_control_reg         0x8010000C
+#define rx_uart_status_reg          0x80100008
 
 
 
