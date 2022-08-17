@@ -11,11 +11,11 @@
 #include <utils/sh_dpi_tasks.h>
 #include <time.h>
 
-#define tx_uart                     0x00000
-#define tx_transmit_reg             0x00004
-#define rx_uart                     0x80000
-#define rx_uart_control_reg         0x8000C
-#define rx_uart_status_reg          0x80008
+
+
+#define rx_uart                     0x80000000
+#define rx_uart_control_reg         0x8000000C
+#define rx_uart_status_reg          0x80000008
 
 
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv){
     rc = fpga_pci_peek(pci_bar_handle, rx_data_read, &write_value);
     fail_on(rc, out, "Unable to read read from the fpga !");                                 //read byte received
 
-    printf("value received is - '%c'", write_value);
+    printf("value received is - '%d'", write_value);
 
     // if(write_value == chr){
     //         printf(" PASSSED");
