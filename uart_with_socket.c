@@ -84,7 +84,7 @@ int check_afi_ready(int slot_id) {
 }
 
 
-int main2(uint32_t final_val){
+uint32_t main2(){
 
 
     uint32_t intrrupt_enable_value        = interrupt_value;
@@ -153,14 +153,14 @@ int main2(uint32_t final_val){
 
     rc = fpga_pci_peek(pci_bar_handle, rx_data_reg, &write_value);
     fail_on(rc, out, "Unable to read read from the fpga !");                            
-    printf("The received value is  - 0x%08x", write_value);
+    printf("The received value is  - 0x%08x \n", write_value);
 
-    final_val = *write_value;
+    return write_value;
 
-    printf("\n");
+    // printf("\n");
 
 
-	return 0;
+	// return 0;
 
 
 
@@ -242,8 +242,8 @@ int main(int argc, char **argv){
 	}
 
 
-	uint32_t final_val = 0;
-	main2(final_val);
+	uint32_t final_val = main2();
+	// main2(final_val);
     printf("\nFINAL VALUE COMING IS %08x",final_val );
   sprintf(str, "%d", final_val);
   printf("\nCONVERTED TO SRT IS %s", str);
