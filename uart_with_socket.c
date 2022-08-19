@@ -155,7 +155,7 @@ int main2(uint32_t final_val){
     fail_on(rc, out, "Unable to read read from the fpga !");                            
     printf("The received value is  - 0x%08x", write_value);
 
-    final_val = write_value;
+    final_val = *write_value;
 
     printf("\n");
 
