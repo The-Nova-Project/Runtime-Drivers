@@ -19,10 +19,10 @@
 #define WAIT_DELAY1             1200
 #define WAIT_DELAY2             100
 
-#define rx_enable_interrupt     0x0C               //rx control reg
-#define rx_data                 0x000000        //read data from receiver
+#define rx_enable_interrupt     0x8000C               //rx control reg
+#define rx_data                 0x80000        //read data from receiver
 #define rx_intr_status          0x0             //by default value is 0
-#define rx_sts_reg              0x08           //UART1 status reg
+#define rx_sts_reg              0x80008           //UART1 status reg
 
 #define interrupt_value         0x10   
 
@@ -252,6 +252,8 @@ int main(int argc, char **argv){
   printf("\n");
 	send(new_socket, hello, strlen(hello), 0);
 	printf("Your message sent\n");
+
+  
 	
 // closing the connected socket
 	close(new_socket);
