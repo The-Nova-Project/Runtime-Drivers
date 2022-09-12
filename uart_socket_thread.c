@@ -88,7 +88,7 @@ int check_afi_ready(int slot_id) {
 }
 
 
-uint32_t main2(){
+uint32_t receiver(){
 
 
     uint32_t intrrupt_enable_value        = interrupt_value;
@@ -234,8 +234,8 @@ int main3(int argc, char **argv){
 	}
 
 
-	uint32_t final_val = main2();
-	// main2(final_val);
+	uint32_t final_val = receiver();
+	// receiver(final_val);
     printf("\nFINAL VALUE COMING IS %08x",final_val );
   sprintf(str, "%d", final_val);
   printf("\nCONVERTED TO SRT IS %s", str);
