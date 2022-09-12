@@ -173,8 +173,7 @@ out:
 
 int main3(int argc, char **argv){
 
-  pthread_t newthread;
-  pthread_create(&newthread , NULL , main2, NULL);
+
 
   int server_fd, new_socket;
 	struct sockaddr_in address;
