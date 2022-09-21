@@ -171,7 +171,7 @@ out:
     
 }
 
-int main3(int argc, char **argv){
+void main3(int argc, char **argv){
 
 
 
@@ -253,7 +253,7 @@ int main3(int argc, char **argv){
 	close(new_socket);
 // closing the listening socket
 	shutdown(server_fd, SHUT_RDWR);
-  return 1;
+  // return 1;
 }
 
 
