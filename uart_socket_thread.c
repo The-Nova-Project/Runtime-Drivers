@@ -259,7 +259,7 @@ void main3(int argc, char **argv){
 
 
 
-int transmitter(int argc, char **argv){
+void transmitter(int argc, char **argv){
 
     uint32_t   send_data           = data_value;
     uint32_t   tx_transmit         = tx_data;
@@ -290,7 +290,7 @@ int transmitter(int argc, char **argv){
     printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
     usleep(delayValue2);
 
-    return 0;
+    // return 0;
 
 out:
     /* clean up */
