@@ -332,6 +332,7 @@ int main(){
 
     pthread_t newthread;
     pthread_create(&newthread , NULL , receiver_thread, NULL);
+    pthread_join(newthread, NULL);
 
     transmitter(NULL);
 }
