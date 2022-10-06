@@ -151,7 +151,7 @@ uint32_t receiver(){
     fail_on(rc, out, "Unable to read read from the fpga !");                            
     printf("The received value is  - 0x%08x \n", write_value);
 
-    return write_value;
+    // return write_value;
 
 
 out:
@@ -168,10 +168,12 @@ out:
 
     fpga_mgmt_close();
 
+    return write_value;
+
     
 }
 
-void main3(int argc, char **argv){
+void* receiver_thread(void* arg){
 
 
 
@@ -254,16 +256,20 @@ void main3(int argc, char **argv){
 // closing the listening socket
 	shutdown(server_fd, SHUT_RDWR);
   // return 1;
+
+  return NULL;
 }
 
 
 
 
-void transmitter(int argc, char **argv){
+void* transmitter(void* arg){
 
     uint32_t   send_data           = data_value;
     uint32_t   tx_transmit         = tx_data;
-    int        slot_id             = 0, 
+    int loop_true                  = 1;
+    int        slot_id             = 0,
+    
             //    bar_id              = APP_PF_BAR1,
                bar_id2             = APP_PF_BAR0,
                rc;
@@ -282,13 +288,17 @@ void transmitter(int argc, char **argv){
     printf("\n ------ ---- --- --- -- - -- sending data ---- --- -- -- - -- - - - --- - \n");
 
 
-    printf("writing 0x%08x to transmit register \n", send_data);    
-    rc = fpga_pci_poke(pci_bar_handle, tx_transmit, send_data);
-    fail_on(rc, out, "Unable to write to the fpga !");
-    printf("\n");
+    while (loop_true){
+      printf("writing 0x%08x to transmit register \n", send_data);    
+      rc = fpga_pci_poke(pci_bar_handle, tx_transmit, send_data);
+      fail_on(rc, out, "Unable to write to the fpga !");
+      printf("\n");
 
-    printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
-    usleep(delayValue2);
+
+      printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
+      usleep(delayValue2);
+    }
+    
 
     // return 0;
 
@@ -306,6 +316,8 @@ out:
 
     fpga_mgmt_close();
 
+    return NULL;
+
     
 }
 
@@ -317,7 +329,7 @@ out:
 int main(){
 
     pthread_t newthread;
-    pthread_create(&newthread , NULL , main3, NULL);
+    pthread_create(&newthread , NULL , receiver_thread, NULL);
 
-    transmitter();
+    transmitter(NULL);
 }
