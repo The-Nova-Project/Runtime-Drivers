@@ -11,6 +11,7 @@
 #include <utils/sh_dpi_tasks.h>
 #include <time.h>
 #include <pthread.h>
+#include  <signal.h>
 
 #include <arpa/inet.h>
 #include <sys/socket.h>
@@ -324,6 +325,7 @@ out:
 
 
 
+void INThandler(int);
 
 
 int main(){
@@ -332,4 +334,20 @@ int main(){
     pthread_create(&newthread , NULL , receiver_thread, NULL);
 
     transmitter(NULL);
+}
+
+
+void INThandler(int sig)
+{
+     char  c;
+
+     signal(sig, SIG_IGN);
+     printf("OUCH, did you hit Ctrl-C?\n"
+            "Do you really want to quit? [y/n] ");
+     c = getchar();
+     if (c == 'y' || c == 'Y')
+          exit(0);
+     else
+          signal(SIGINT, INThandler);
+     getchar(); // Get new line character
 }
