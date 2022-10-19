@@ -9,18 +9,20 @@
 #define PORT 8080
 int flag = 0;
 uint32_t transact_value;
+pthread_t transmitter;
+int alwaystrue = 1;
+int talnet_socket;
 
 uint32_t receiver_thread(void* arg)
 {
 
     int alwaystrue = 1;
     uint32_t received_value;
+
     
     while (alwaystrue) {
-        if(flag == 1){
-            received_value = transact_value;
-            break;
-        }
+       //-----------------------step1 read from driver-----------------------
+       //-----------------------step2 send to telnet socket------------------
     }
 
     return received_value;
@@ -30,16 +32,25 @@ uint32_t receiver_thread(void* arg)
     // return NULL;
 }
 
-void* transmitter_thread(char* trans){
-    int i;
-    uint32_t tr;
-    // for(i = 0; i < 50; i++){
-    //    printf("%d \n", i);
-    // }
-    flag = 1;
-    // convert trans from char* to uint32_t
-    // sprintf(tr, "%s", trans);
-    transact_value = trans;
+void* transmitter_thread(void* trans){
+    int  valread;
+    char buffer[1024] = {0};
+
+     while (alwaystrue) {
+        
+
+        valread = read(talnet_socket, buffer, 1024);
+
+        //-----------------------here call write value for driver-----------------------
+        send(talnet_socket, buffer, valread, 0);
+        // uint32_t value = receiver_thread(NULL);
+        char convert[32];
+        // sprintf(convert, "%u", value);
+        // printf("writing %s to driver" , buffer );
+     }
+
+
+
     return NULL;
 }
 
@@ -47,20 +58,13 @@ void* transmitter_thread(char* trans){
 int main(int argc, char const* argv[])
 {
     pthread_t transmitter;
-    // pthread_create(&receiver, NULL, receiver_thread, NULL);
-    // pthread_create(&transmitter, NULL, transmitter, NULL);
 
-    // pthread_join(receiver, NULL);
-    // pthread_join(transmitter, NULL);
-    // transmitter(NULL);
-
-    int server_fd, new_socket, valread;
+    int server_fd, valread;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
-    uint32_t hello2;
-    char* hello = "Hello from server";
+    
     
 
     // Creating socket file descriptor
@@ -87,50 +91,26 @@ int main(int argc, char const* argv[])
         perror("listen");
         exit(EXIT_FAILURE);
     }
-    if ((new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
+    if ((talnet_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
         perror("accept");
         exit(EXIT_FAILURE);
     }
 
     int alwaystrue = 1;
-    while (alwaystrue) {
-        
 
-        valread = read(new_socket, buffer, 1024);
-        // define send_msg variable
-
-
-        char* lines_msg = "--------------------------------------------\n";
-        char* send_msg = "Transmitting Message\n";
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-        send(new_socket, send_msg, strlen(send_msg), 0);
-        send(new_socket, buffer, strlen(buffer), 0);
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-        pthread_create(&transmitter, NULL, transmitter_thread, buffer);
+        pthread_create(&transmitter, NULL, transmitter_thread, NULL);
+        //-----------------------call receiver_thread function-----------------------
         pthread_join(transmitter, NULL);
-        hello2 = receiver_thread(NULL);
-        sprintf(hello, "%d", hello2);
-        // hello = (char *)hello2;
-
-
-        
 
 
 
-        char* recv_msg = "Received Message\n";
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-        send(new_socket, recv_msg, strlen(recv_msg), 0);
-        printf("%s", hello);
-        // send(new_socket, hello, strlen(hello), 0);
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-    
-    }
 
     //closing the connected socket
-    close(new_socket);
-
-    //closing the listening socket
-    shutdown(server_fd, SHUT_RDWR);
+    //-----------------------uncomment these when needed-----------------------
+	// close(talnet_socket);
+    // close(server_fd);
+        
 
     return 0;
-}
+
+    }
