@@ -32,7 +32,7 @@ static uint16_t pci_device_id           = 0xF000; /* PCI Device ID preassigned b
 static pci_bar_handle_t pci_bar_handle  = PCI_BAR_HANDLE_INIT;
 static int pf_id                        = FPGA_APP_PF;
 int telnet_socket;
-pthread_t transmitter;
+pthread_t transmitter_thread;
 int alwaystrue = 1;
 
 
@@ -211,7 +211,7 @@ uint32_t uart_receiver(){
         rc = fpga_pci_peek(pci_bar_handle, rx_data_reg, &write_value);
         fail_on(rc, out, "Unable to read read from the fpga !");                            
         printf("The received value is  - 0x%08x \n", write_value);
-        send(new_socket, write_value, strlen(write_value), 0);
+        send(telnet_socket, write_value, strlen(write_value), 0);
         
     
     }
