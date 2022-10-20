@@ -31,13 +31,16 @@ static uint16_t pci_vendor_id           = 0x1D0F; /* Amazon PCI Vendor ID */
 static uint16_t pci_device_id           = 0xF000; /* PCI Device ID preassigned by Amazon for F1 applications */
 static pci_bar_handle_t pci_bar_handle  = PCI_BAR_HANDLE_INIT;
 static int pf_id                        = FPGA_APP_PF;
+int telnet_socket;
+pthread_t transmitter;
+int alwaystrue = 1;
 
 
 
 
 int main(){
 
-    pthread_t   transmitter_thread;
+    // pthread_t   transmitter_thread;
     int         server_fd, 
                 new_socket, 
                 valread;
@@ -72,36 +75,10 @@ int main(){
         exit(EXIT_FAILURE);
     }
 
-    
-    while (alwaystrue) {
-        
 
-        valread = read(new_socket, buffer, 1024);
-
-        char* lines_msg = "---------------------\n";
-        char* send_msg = "Transmitting Message\n";
-        char* recv_msg = "Received Message\n";
-
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-        send(new_socket, send_msg, strlen(send_msg), 0);
-        send(new_socket, buffer, strlen(buffer), 0);
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-
-        pthread_create(&transmitter_thread, NULL, uart_transmitter, buffer);
+        pthread_create(&transmitter_thread, NULL, uart_transmitter, NULL);
         pthread_join(transmitter_thread, NULL);
 
-        rcvd_val = uart_receiver(NULL);
-
-        
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-        send(new_socket, recv_msg, strlen(recv_msg), 0);
-        send(new_socket, rcvd_val, strlen(rcvd_val), 0);
-        send(new_socket, lines_msg, strlen(lines_msg), 0);
-    
-    }
-
-    close(new_socket);
-    shutdown(server_fd, SHUT_RDWR);
 
     return 0;
 
@@ -109,9 +86,9 @@ int main(){
 
 
 
-void* uart_transmitter(char* transmit_value){
+void* uart_transmitter(){
 
-    uint32_t   send_data           = transmit_value;
+    uint32_t   send_data;
     uint32_t   tx_transmit         = tx_data;
     int loop_true                  = 1;
     int        slot_id             = 0,
@@ -120,6 +97,8 @@ void* uart_transmitter(char* transmit_value){
                bar_id2             = APP_PF_BAR0,
                rc;
     long      delayValue2          = WAIT_DELAY2;
+    int  valread;
+    char buffer[1024] = {0};
 
     rc = fpga_mgmt_init();
     fail_on(rc, out, "Unable to initialize the fpga_mgmt library");
@@ -130,19 +109,21 @@ void* uart_transmitter(char* transmit_value){
     rc = fpga_pci_attach(slot_id, pf_id, bar_id2, 0, &pci_bar_handle);
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
 
+    while(alwaystrue){
 
-    printf("\n ------ ---- --- --- -- - -- sending data ---- --- -- -- - -- - - - --- - \n");
+        valread = read(telnet_socket, buffer, 1024);
+        send_data = buffer;
+        send(telnet_socket, buffer, valread, 0);
 
-
-    while (loop_true){
-      printf("writing 0x%08x to transmit register \n", send_data);    
-      rc = fpga_pci_poke(pci_bar_handle, tx_transmit, send_data);
-      fail_on(rc, out, "Unable to write to the fpga !");
-      printf("\n");
+        printf("\n ------ ---- --- --- -- - -- sending data ---- --- -- -- - -- - - - --- - \n");
 
 
-      printf("SLEEP FOR %4ld microecond \n", delayValue2);                              //time sleep
-      usleep(delayValue2);
+        printf("writing 0x%08x to transmit register \n", send_data);    
+        rc = fpga_pci_poke(pci_bar_handle, tx_transmit, send_data);
+        fail_on(rc, out, "Unable to write to the fpga !");
+        printf("\n");
+
+      
     }
     
 
@@ -202,34 +183,39 @@ uint32_t uart_receiver(){
     rc = fpga_pci_attach(slot_id, pf_id, bar_id2, 0, &pci_bar_handle);
     fail_on(rc, out, "Unable to attach to the AFI on slot id %d", slot_id);
 
-    
+    while(alwaystrue){
 
-    printf("writing 0x%08x to RX register \n", intrrupt_enable_value);  
-    rc = fpga_pci_poke(pci_bar_handle, rx_control_reg, intrrupt_enable_value);
-    fail_on(rc, out, "Unable to write to the fpga !");
-
-
-    rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
-    fail_on(rc, out, "Unable to read read from the fpga !");
-    printf("Byte received valid value is  - 0x%08x", intr_sts);
+        printf("writing 0x%08x to RX register \n", intrrupt_enable_value);  
+        rc = fpga_pci_poke(pci_bar_handle, rx_control_reg, intrrupt_enable_value);
+        fail_on(rc, out, "Unable to write to the fpga !");
 
 
-    result_AND = intr_sts & for_AND;
-    
-
-    while (result_AND != 16)
-    {
         rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
         fail_on(rc, out, "Unable to read read from the fpga !");
         printf("Byte received valid value is  - 0x%08x", intr_sts);
 
+
         result_AND = intr_sts & for_AND;
         
+
+        while (result_AND != 16)
+        {
+            rc = fpga_pci_peek(pci_bar_handle, rx_status_reg, &intr_sts);
+            fail_on(rc, out, "Unable to read read from the fpga !");
+            printf("Byte received valid value is  - 0x%08x", intr_sts);
+
+            result_AND = intr_sts & for_AND;
+            
+        }
+
+        rc = fpga_pci_peek(pci_bar_handle, rx_data_reg, &write_value);
+        fail_on(rc, out, "Unable to read read from the fpga !");                            
+        printf("The received value is  - 0x%08x \n", write_value);
+        send(new_socket, write_value, strlen(write_value), 0);
+        
+    
     }
 
-    rc = fpga_pci_peek(pci_bar_handle, rx_data_reg, &write_value);
-    fail_on(rc, out, "Unable to read read from the fpga !");                            
-    printf("The received value is  - 0x%08x \n", write_value);
 
     // return write_value;
 
