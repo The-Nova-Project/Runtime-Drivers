@@ -255,6 +255,8 @@ int main(int argc, char **argv){
   printf("\n");
 	send(new_socket, hello, strlen(hello), 0);
 	printf("Your message sent\n");
+
+  
 	
 // closing the connected socket
 	close(new_socket);
